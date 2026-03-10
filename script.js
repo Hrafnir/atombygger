@@ -1,4 +1,4 @@
-/* Version: #6 */
+/* Version: #8 */
 
 // === SEKSJON: Tilstand (State) ===
 // Her lagrer vi de nåværende dataene for byggeflaten vår.
@@ -31,6 +31,10 @@ const infoMass = document.getElementById('info-mass');
 const infoCharge = document.getElementById('info-charge');
 const infoState = document.getElementById('info-state');
 
+// Byggeflate elementer (Lagt til i Versjon 8)
+const nucleusContainer = document.getElementById('nucleus-container');
+const shellsContainer = document.getElementById('shells-container');
+
 // === SEKSJON: Fane-navigasjon ===
 function switchTab(tabName) {
     console.log(`[Navigasjon] Forsøker å bytte til fane: ${tabName}`);
@@ -61,11 +65,92 @@ tabPeriodic.addEventListener('click', () => {
     switchTab('periodic');
 });
 
+// === SEKSJON: Visuell Tegning (NY) ===
+function drawAtom() {
+    console.log('[Tegning] Starter visuell opptegning av atomet...');
+    
+    // 1. Tøm det gamle atomet
+    nucleusContainer.innerHTML = '';
+    shellsContainer.innerHTML = '';
+
+    // 2. Tegn atomkjernen (Protoner og Nøytroner)
+    const totalNucleons = atomState.protons + atomState.neutrons;
+    console.log(`[Tegning] Tegner kjerne med ${totalNucleons} partikler.`);
+    
+    for(let i = 0; i < atomState.protons; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle proton';
+        p.textContent = '+';
+        nucleusContainer.appendChild(p);
+    }
+    
+    for(let i = 0; i < atomState.neutrons; i++) {
+        const n = document.createElement('div');
+        n.className = 'particle neutron';
+        nucleusContainer.appendChild(n);
+    }
+
+    // 3. Tegn elektronskall og elektroner
+    // Pedagogisk forenkling for ungdomsskole: 2, 8, 8, 18...
+    const maxPerShell = [2, 8, 8, 18, 18, 32]; 
+    let remainingElectrons = atomState.electrons;
+    let currentShellIndex = 0;
+    
+    const shellBaseRadius = 50; // Pixel radius for det innerste skallet
+    const shellGap = 40; // Avstand i piksler mellom hvert skall
+
+    while(remainingElectrons > 0) {
+        const capacity = maxPerShell[currentShellIndex] || 32;
+        const electronsInThisShell = Math.min(remainingElectrons, capacity);
+        
+        console.log(`[Tegning] Skall ${currentShellIndex + 1}: Kapasitet=${capacity}, Inneholder=${electronsInThisShell} elektron(er).`);
+
+        const radius = shellBaseRadius + (currentShellIndex * shellGap);
+        const diameter = radius * 2;
+        
+        // Opprett selve sirkelen for skallet
+        const shellEl = document.createElement('div');
+        shellEl.className = 'shell';
+        shellEl.style.width = `${diameter}px`;
+        shellEl.style.height = `${diameter}px`;
+        shellsContainer.appendChild(shellEl);
+
+        // Plasser elektronene jevnt fordelt langs dette skallet
+        for(let i = 0; i < electronsInThisShell; i++) {
+            const e = document.createElement('div');
+            e.className = 'particle electron';
+            e.textContent = '-';
+            
+            // Beregn vinkel i radianer for å spre dem i en sirkel
+            const angle = (i / electronsInThisShell) * 2 * Math.PI;
+            
+            // x og y koordinater relativt til midten av skallet (som har bredde/høyde = diameter)
+            const x = radius + radius * Math.cos(angle);
+            const y = radius + radius * Math.sin(angle);
+            
+            e.style.left = `${x}px`;
+            e.style.top = `${y}px`;
+            e.style.transform = 'translate(-50%, -50%)'; // Sentrer elektronet over linjen
+            
+            shellEl.appendChild(e);
+        }
+
+        remainingElectrons -= electronsInThisShell;
+        currentShellIndex++;
+        
+        if (currentShellIndex > 7) {
+            console.log('[Tegning] Advarsel: Nådd uventet høyt antall skall.');
+            break; // Sikkerhetsventil
+        }
+    }
+    console.log('[Tegning] Visuell opptegning fullført.');
+}
+
 // === SEKSJON: Analyse og UI Oppdatering ===
 function updateUI() {
     console.log('[UI] Oppdaterer grensesnittet...');
     analyzeAtom();
-    // Her vil vi senere kalle drawAtom() for å tegne partiklene
+    drawAtom(); // Nytt kall lagt til her!
 }
 
 function analyzeAtom() {
@@ -75,8 +160,6 @@ function analyzeAtom() {
     
     console.log(`[Analyse] Kjører analyse for: Z=${z}, N=${n}, E=${e}`);
     
-    // 1. Finn grunnstoffet i databasen basert på antall protoner (Z)
-    // Forutsetter at elements.js er lastet inn før denne filen
     const element = typeof elementsData !== 'undefined' ? elementsData.find(el => el.z === z) : null;
     
     if (z === 0) {
@@ -90,20 +173,17 @@ function analyzeAtom() {
         infoSymbol.textContent = "?";
     }
 
-    // 2. Beregn Nukleontall (A = protoner + nøytroner)
     const mass = z + n;
     infoAtomicNumber.textContent = z;
     infoMass.textContent = mass;
 
-    // 3. Beregn Netto Ladning (protoner - elektroner)
     const charge = z - e;
     let chargeStr = "0";
     if (charge > 0) chargeStr = "+" + charge;
-    else if (charge < 0) chargeStr = charge.toString(); // Beholder minus-tegnet
+    else if (charge < 0) chargeStr = charge.toString();
     
     infoCharge.textContent = chargeStr;
 
-    // 4. Bestem tilstand (Atom, Ion, Isotop)
     let stateStr = "Tomt";
     if (z === 0 && (n > 0 || e > 0)) {
         stateStr = "Løse partikler";
@@ -145,14 +225,12 @@ function updateParticleCount(particleType, amount) {
         console.log(`[Partikkel-logikk] La til ${amount} elektron(er).`);
     }
 
-    // Hindre negative verdier
     if (atomState.protons < 0) atomState.protons = 0;
     if (atomState.neutrons < 0) atomState.neutrons = 0;
     if (atomState.electrons < 0) atomState.electrons = 0;
 
     console.log(`[Partikkel-logikk] Etter endring: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
     
-    // Oppdater UI etter endring
     updateUI();
 }
 
@@ -163,7 +241,6 @@ function resetAtom() {
     atomState.electrons = 0;
     console.log(`[Partikkel-logikk] Status etter tilbakestilling: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
     
-    // Oppdater UI etter nullstilling
     updateUI();
 }
 
@@ -188,4 +265,4 @@ btnReset.addEventListener('click', () => {
 console.log('[System] script.js er lastet inn. Initialiserer UI.');
 updateUI();
 
-/* Version: #6 */
+/* Version: #8 */
