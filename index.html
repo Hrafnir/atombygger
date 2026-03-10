@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atombyggeren</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Atombyggeren</h1>
+        <nav>
+            <button id="tab-build" class="tab-button active">Byggeflate</button>
+            <button id="tab-periodic" class="tab-button">Periodesystem</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="build-section" class="view-section active">
+            
+            <div class="controls-panel">
+                <h2>Verktøykasse</h2>
+                <button id="btn-add-proton" class="particle-btn proton">+ Proton (p⁺)</button>
+                <button id="btn-add-neutron" class="particle-btn neutron">+ Nøytron (n⁰)</button>
+                <button id="btn-add-electron" class="particle-btn electron">+ Elektron (e⁻)</button>
+                <button id="btn-reset" class="reset-btn">Tøm byggeflate</button>
+            </div>
+            
+            <div class="build-canvas" id="atom-canvas">
+                <div class="nucleus" id="nucleus-container"></div>
+                <div class="electron-shells" id="shells-container"></div>
+            </div>
+
+            <div class="info-panel" id="atom-info">
+                <h2>Analyse</h2>
+                <p><strong>Grunnstoff:</strong> <span id="info-element">Ingen</span></p>
+                <p><strong>Symbol:</strong> <span id="info-symbol">-</span></p>
+                <p><strong>Atomnummer (Z):</strong> <span id="info-atomic-number">0</span></p>
+                <p><strong>Nukleontall (A):</strong> <span id="info-mass">0</span></p>
+                <p><strong>Netto ladning:</strong> <span id="info-charge">0</span></p>
+                <p><strong>Tilstand:</strong> <span id="info-state">Tomt</span></p> </div>
+            
+        </section>
+
+        <section id="periodic-section" class="view-section hidden">
+            <h2>Periodesystemet</h2>
+            <p>Klikk på et grunnstoff for å laste det inn i byggeflaten.</p>
+            <div id="periodic-table-grid" class="periodic-grid">
+                </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
