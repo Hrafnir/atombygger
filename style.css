@@ -1,4 +1,4 @@
-/* Version: #2 */
+/* Version: #7 */
 :root {
     --primary-color: #2c3e50;
     --bg-color: #f4f7f6;
@@ -185,7 +185,6 @@ main {
     margin-top: 20px;
 }
 
-/* Grunnleggende stil for et element i periodesystemet */
 .element-box {
     aspect-ratio: 1;
     display: flex;
@@ -216,4 +215,72 @@ main {
     font-size: 0.7rem;
     opacity: 0.8;
 }
-/* Version: #2 */
+
+/* === SEKSJON: Visuelle Partikler og Atom (NY) === */
+
+.nucleus {
+    position: absolute;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 60px;
+    height: 60px;
+    z-index: 10;
+    /* Sentrerer innholdet */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+}
+
+.electron-shells {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; /* Klikk går rett gjennom til eventuelle knapper under */
+}
+
+.shell {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+}
+
+.particle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: bold;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    margin: 1px;
+}
+
+.particle.proton {
+    background-color: var(--proton-color);
+    color: white;
+}
+
+.particle.neutron {
+    background-color: var(--neutron-color);
+    color: white;
+}
+
+.particle.electron {
+    background-color: var(--electron-color);
+    color: var(--electron-text);
+    position: absolute; /* Elektroner plasseres absolutt på skallet sitt */
+    /* Transform brukes i JS for å plassere dem nøyaktig på sirkelen */
+    margin: 0; 
+}
+/* Version: #7 */
