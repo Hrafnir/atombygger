@@ -1,4 +1,4 @@
-/* Version: #12 */
+/* Version: #16 */
 
 // === SEKSJON: Tilstand (State) ===
 // Her lagrer vi de nåværende dataene for byggeflaten vår.
@@ -36,6 +36,7 @@ const infoAtomicNumber = document.getElementById('info-atomic-number');
 const infoMass = document.getElementById('info-mass');
 const infoCharge = document.getElementById('info-charge');
 const infoState = document.getElementById('info-state');
+const infoTrivia = document.getElementById('info-trivia'); // Ny i Versjon 16
 
 // Byggeflate elementer
 const nucleusContainer = document.getElementById('nucleus-container');
@@ -89,6 +90,17 @@ function generatePeriodicTable() {
         const box = document.createElement('div');
         box.className = 'element-box';
         
+        // Legg til kategori-klasse for fargekoding (Nytt i Versjon 16)
+        if (element.category) {
+            box.classList.add(element.category);
+        }
+
+        // Posisjoner elementet i CSS Grid basert på databasen (Nytt i Versjon 16)
+        if (element.x && element.y) {
+            box.style.gridColumn = element.x;
+            box.style.gridRow = element.y;
+        }
+        
         const symbolEl = document.createElement('div');
         symbolEl.className = 'element-symbol';
         symbolEl.textContent = element.symbol;
@@ -118,7 +130,7 @@ function generatePeriodicTable() {
         periodicGrid.appendChild(box);
     });
     
-    console.log('[Periodesystem] Rutenett generert med', elementsData.length, 'grunnstoffer.');
+    console.log('[Periodesystem] Rutenett generert med', elementsData.length, 'grunnstoffer og plassert i Grid.');
 }
 
 // === SEKSJON: Visuell Tegning ===
@@ -185,7 +197,7 @@ function drawAtom() {
     }
 
     // 3. Tegn elektronskall og elektroner
-    const maxPerShell = [2, 8, 8, 18, 18, 32]; 
+    const maxPerShell = [2, 8, 8, 18, 18, 32, 32]; // Utvidet for å takle store atomer
     let remainingElectrons = atomState.electrons;
     let currentShellIndex = 0;
     
@@ -249,15 +261,24 @@ function analyzeAtom() {
     
     const element = typeof elementsData !== 'undefined' ? elementsData.find(el => el.z === z) : null;
     
+    // Grunnleggende analyse
     if (z === 0) {
         infoElement.textContent = "Ingen";
         infoSymbol.textContent = "-";
+        infoTrivia.textContent = "Bygg et atom eller velg fra periodesystemet for å lære mer!";
     } else if (element) {
         infoElement.textContent = element.name;
         infoSymbol.textContent = element.symbol;
+        // Håndter trivia-utskrift (Nytt i Versjon 16)
+        if (element.trivia && element.trivia.trim() !== "") {
+            infoTrivia.textContent = element.trivia;
+        } else {
+            infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z}? Legg til trivia i databasen for å lære mer!`;
+        }
     } else {
         infoElement.textContent = "Ukjent (utenfor databasen)";
         infoSymbol.textContent = "?";
+        infoTrivia.textContent = "Denne partikkelkombinasjonen eksisterer ikke som et kjent grunnstoff.";
     }
 
     const mass = z + n;
@@ -343,7 +364,7 @@ btnReset.addEventListener('click', resetAtom);
 
 // Initialiser UI ved oppstart
 console.log('[System] script.js er lastet inn. Initialiserer UI.');
-generatePeriodicTable(); // Last inn periodesystemet
+generatePeriodicTable(); // Last inn periodesystemet med riktig layout og farger
 updateUI();
 
-/* Version: #12 */
+/* Version: #16 */
