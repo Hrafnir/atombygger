@@ -1,4 +1,4 @@
-/* Version: #7 */
+/* Version: #10 */
 :root {
     --primary-color: #2c3e50;
     --bg-color: #f4f7f6;
@@ -125,19 +125,25 @@ main {
 }
 
 /* === Knapper og Verktøy === */
+.control-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
 .particle-btn {
     display: block;
     width: 100%;
     padding: 12px;
-    margin-bottom: 10px;
     font-size: 1rem;
     font-weight: bold;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s;
     box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    flex-grow: 1; /* Lar pluss-knappen ta mest plass */
 }
 
 .particle-btn:active {
@@ -151,6 +157,27 @@ main {
     background-color: var(--electron-color); 
     color: var(--electron-text);
 }
+
+/* Styling for minus-knapper */
+.particle-btn.outline {
+    flex-grow: 0;
+    width: 50px;
+    background-color: transparent;
+    border: 2px solid;
+    font-size: 1.4rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+}
+
+.particle-btn.proton.outline { color: var(--proton-color); border-color: var(--proton-color); }
+.particle-btn.neutron.outline { color: var(--neutron-color); border-color: var(--neutron-color); }
+.particle-btn.electron.outline { color: var(--electron-color); border-color: var(--electron-color); }
+
+.particle-btn.proton.outline:hover { background-color: var(--proton-color); color: white; }
+.particle-btn.neutron.outline:hover { background-color: var(--neutron-color); color: white; }
+.particle-btn.electron.outline:hover { background-color: var(--electron-color); color: var(--electron-text); }
 
 .reset-btn {
     display: block;
@@ -216,22 +243,16 @@ main {
     opacity: 0.8;
 }
 
-/* === SEKSJON: Visuelle Partikler og Atom (NY) === */
+/* === SEKSJON: Visuelle Partikler og Atom === */
 
 .nucleus {
     position: absolute;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    width: 60px;
-    height: 60px;
-    z-index: 10;
-    /* Sentrerer innholdet */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    border-radius: 50%;
+    width: 0;  /* Fungerer nå som et nøyaktig senter-anker */
+    height: 0;
+    z-index: 10;
 }
 
 .electron-shells {
@@ -241,7 +262,7 @@ main {
     width: 100%;
     height: 100%;
     transform: translate(-50%, -50%);
-    pointer-events: none; /* Klikk går rett gjennom til eventuelle knapper under */
+    pointer-events: none;
 }
 
 .shell {
@@ -263,7 +284,11 @@ main {
     font-size: 10px;
     font-weight: bold;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-    margin: 1px;
+}
+
+.nucleus .particle {
+    position: absolute; /* Tillater hulter-til-bulter posisjonering */
+    transform: translate(-50%, -50%);
 }
 
 .particle.proton {
@@ -279,8 +304,25 @@ main {
 .particle.electron {
     background-color: var(--electron-color);
     color: var(--electron-text);
-    position: absolute; /* Elektroner plasseres absolutt på skallet sitt */
-    /* Transform brukes i JS for å plassere dem nøyaktig på sirkelen */
+    position: absolute; 
     margin: 0; 
 }
-/* Version: #7 */
+
+/* Nytt "skilt" for når kjernen blir for stor */
+.nucleus-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    z-index: 20;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    pointer-events: none;
+}
+/* Version: #10 */
