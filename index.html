@@ -18,43 +18,46 @@
     <main>
         <section id="build-section" class="view-section active">
             
-            <div class="controls-panel">
-                <h2>Verktøykasse</h2>
-                
-                <div class="control-row">
-                    <button id="btn-add-proton" class="particle-btn proton">+ Proton (p⁺)</button>
-                    <button id="btn-remove-proton" class="particle-btn proton outline">-</button>
+            <div class="build-top-row">
+                <div class="controls-panel">
+                    <h2>Verktøykasse</h2>
+                    
+                    <div class="control-row">
+                        <button id="btn-add-proton" class="particle-btn proton">+ Proton (p⁺)</button>
+                        <button id="btn-remove-proton" class="particle-btn proton outline">-</button>
+                    </div>
+                    
+                    <div class="control-row">
+                        <button id="btn-add-neutron" class="particle-btn neutron">+ Nøytron (n⁰)</button>
+                        <button id="btn-remove-neutron" class="particle-btn neutron outline">-</button>
+                    </div>
+                    
+                    <div class="control-row">
+                        <button id="btn-add-electron" class="particle-btn electron">+ Elektron (e⁻)</button>
+                        <button id="btn-remove-electron" class="particle-btn electron outline">-</button>
+                    </div>
+
+                    <button id="btn-reset" class="reset-btn">Tøm byggeflate</button>
                 </div>
                 
-                <div class="control-row">
-                    <button id="btn-add-neutron" class="particle-btn neutron">+ Nøytron (n⁰)</button>
-                    <button id="btn-remove-neutron" class="particle-btn neutron outline">-</button>
-                </div>
-                
-                <div class="control-row">
-                    <button id="btn-add-electron" class="particle-btn electron">+ Elektron (e⁻)</button>
-                    <button id="btn-remove-electron" class="particle-btn electron outline">-</button>
+                <div class="build-canvas" id="atom-canvas">
+                    <div class="nucleus" id="nucleus-container"></div>
+                    <div class="electron-shells" id="shells-container"></div>
                 </div>
 
-                <button id="btn-reset" class="reset-btn">Tøm byggeflate</button>
-            </div>
-            
-            <div class="build-canvas" id="atom-canvas">
-                <div class="nucleus" id="nucleus-container"></div>
-                <div class="electron-shells" id="shells-container"></div>
+                <div class="info-panel" id="atom-info">
+                    <h2>Analyse</h2>
+                    <p><strong>Grunnstoff:</strong> <span id="info-element">Ingen</span></p>
+                    <p><strong>Symbol:</strong> <span id="info-symbol">-</span></p>
+                    <p><strong>Atomnummer (Z):</strong> <span id="info-atomic-number">0</span></p>
+                    <p><strong>Nukleontall (A):</strong> <span id="info-mass">0</span></p>
+                    <p><strong>Netto ladning:</strong> <span id="info-charge">0</span></p>
+                    <p><strong>Tilstand:</strong> <span id="info-state">Tomt</span></p> </div>
             </div>
 
-            <div class="info-panel" id="atom-info">
-                <h2>Analyse</h2>
-                <p><strong>Grunnstoff:</strong> <span id="info-element">Ingen</span></p>
-                <p><strong>Symbol:</strong> <span id="info-symbol">-</span></p>
-                <p><strong>Atomnummer (Z):</strong> <span id="info-atomic-number">0</span></p>
-                <p><strong>Nukleontall (A):</strong> <span id="info-mass">0</span></p>
-                <p><strong>Netto ladning:</strong> <span id="info-charge">0</span></p>
-                <p><strong>Tilstand:</strong> <span id="info-state">Tomt</span></p> <div class="trivia-section">
-                    <h2>Fakta & Trivia</h2>
-                    <p id="info-trivia">Bygg et atom eller velg fra periodesystemet for å lære mer!</p>
-                </div>
+            <div class="trivia-section full-width">
+                <h2>Fakta & Trivia</h2>
+                <p id="info-trivia">Bygg et atom eller velg fra periodesystemet for å lære mer!</p>
             </div>
             
         </section>
