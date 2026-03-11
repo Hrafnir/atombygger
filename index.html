@@ -20,9 +20,22 @@
             
             <div class="controls-panel">
                 <h2>Verktøykasse</h2>
-                <button id="btn-add-proton" class="particle-btn proton">+ Proton (p⁺)</button>
-                <button id="btn-add-neutron" class="particle-btn neutron">+ Nøytron (n⁰)</button>
-                <button id="btn-add-electron" class="particle-btn electron">+ Elektron (e⁻)</button>
+                
+                <div class="control-row">
+                    <button id="btn-add-proton" class="particle-btn proton">+ Proton (p⁺)</button>
+                    <button id="btn-remove-proton" class="particle-btn proton outline">-</button>
+                </div>
+                
+                <div class="control-row">
+                    <button id="btn-add-neutron" class="particle-btn neutron">+ Nøytron (n⁰)</button>
+                    <button id="btn-remove-neutron" class="particle-btn neutron outline">-</button>
+                </div>
+                
+                <div class="control-row">
+                    <button id="btn-add-electron" class="particle-btn electron">+ Elektron (e⁻)</button>
+                    <button id="btn-remove-electron" class="particle-btn electron outline">-</button>
+                </div>
+
                 <button id="btn-reset" class="reset-btn">Tøm byggeflate</button>
             </div>
             
