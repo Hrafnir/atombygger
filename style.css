@@ -1,4 +1,4 @@
-/* Version: #15 */
+/* Version: #19 */
 :root {
     --primary-color: #2c3e50;
     --bg-color: #f4f7f6;
@@ -90,11 +90,18 @@ main {
     display: none;
 }
 
-#periodic-section {
+/* Gjør om begge hovedseksjonene til kolonne-layout for å støtte innhold under */
+#build-section, #periodic-section {
     flex-direction: column;
 }
 
 /* === Byggeflate Layout === */
+.build-top-row {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+
 .controls-panel, .info-panel {
     flex: 1;
     background-color: var(--bg-color);
@@ -204,17 +211,30 @@ main {
     border-left: 4px solid var(--tab-active);
 }
 
-.trivia-section {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 2px dashed #bdc3c7;
+/* Ny fullbredde-design for Trivia i Versjon 19 */
+.trivia-section.full-width {
+    width: 100%;
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
 }
 
-.trivia-section p {
-    background-color: #e8f4f8;
-    border-left: 4px solid #2980b9;
-    font-size: 1rem;
-    font-style: italic;
+.trivia-section.full-width h2 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--tab-active);
+    padding-bottom: 5px;
+}
+
+.trivia-section.full-width p {
+    background-color: white;
+    border-left: 4px solid var(--tab-active);
+    font-size: 1.1rem;
+    padding: 15px;
+    border-radius: 4px;
+    line-height: 1.6;
 }
 
 /* === Pedagogiske bokser i Periodesystemet === */
@@ -244,7 +264,6 @@ main {
 .periodic-grid {
     display: grid;
     grid-template-columns: repeat(18, 1fr);
-    /* grid-template-rows genereres implisitt, og gap settes til 4px */
     gap: 4px;
     margin-top: 10px;
 }
@@ -262,7 +281,6 @@ main {
     transition: transform 0.2s, filter 0.2s;
     font-size: 0.8rem;
     color: #333;
-    /* Skygge for dybde */
     box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
 }
 
@@ -284,7 +302,6 @@ main {
 }
 
 /* === Fargekoder for Periodesystemet === */
-/* Disse klassene legges til dynamisk via script.js basert på category i databasen */
 .element-box.ikke-metall { background-color: #a0ffa0; }
 .element-box.edelgass { background-color: #c0ffff; }
 .element-box.alkalimetall { background-color: #ff6666; }
@@ -377,4 +394,4 @@ main {
     white-space: nowrap;
     pointer-events: none;
 }
-/* Version: #15 */
+/* Version: #19 */
