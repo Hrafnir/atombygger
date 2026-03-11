@@ -1,4 +1,4 @@
-/* Version: #10 */
+/* Version: #15 */
 :root {
     --primary-color: #2c3e50;
     --bg-color: #f4f7f6;
@@ -143,7 +143,7 @@ main {
     cursor: pointer;
     transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s;
     box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-    flex-grow: 1; /* Lar pluss-knappen ta mest plass */
+    flex-grow: 1;
 }
 
 .particle-btn:active {
@@ -194,7 +194,7 @@ main {
 
 .reset-btn:hover { background-color: #c0392b; }
 
-/* === Informasjonspanel === */
+/* === Informasjonspanel & Trivia === */
 .info-panel p {
     font-size: 1.1rem;
     margin-bottom: 10px;
@@ -204,12 +204,49 @@ main {
     border-left: 4px solid var(--tab-active);
 }
 
+.trivia-section {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 2px dashed #bdc3c7;
+}
+
+.trivia-section p {
+    background-color: #e8f4f8;
+    border-left: 4px solid #2980b9;
+    font-size: 1rem;
+    font-style: italic;
+}
+
+/* === Pedagogiske bokser i Periodesystemet === */
+.pedagogy-info {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.info-box {
+    flex: 1;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.info-box h3 {
+    margin-bottom: 8px;
+    color: var(--primary-color);
+}
+
+.groups-info { border-left: 5px solid #e67e22; }
+.periods-info { border-left: 5px solid #8e44ad; }
+
 /* === Periodesystem Rutenett === */
 .periodic-grid {
     display: grid;
     grid-template-columns: repeat(18, 1fr);
+    /* grid-template-rows genereres implisitt, og gap settes til 4px */
     gap: 4px;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .element-box {
@@ -219,18 +256,21 @@ main {
     justify-content: center;
     align-items: center;
     background-color: #ecf0f1;
-    border: 1px solid #bdc3c7;
+    border: 1px solid rgba(0,0,0,0.1);
     border-radius: 4px;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
+    transition: transform 0.2s, filter 0.2s;
     font-size: 0.8rem;
+    color: #333;
+    /* Skygge for dybde */
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
 }
 
 .element-box:hover {
-    transform: scale(1.1);
-    background-color: var(--tab-active);
-    color: white;
+    transform: scale(1.15);
+    filter: brightness(1.1);
     z-index: 10;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
 .element-symbol {
@@ -243,14 +283,27 @@ main {
     opacity: 0.8;
 }
 
-/* === SEKSJON: Visuelle Partikler og Atom === */
+/* === Fargekoder for Periodesystemet === */
+/* Disse klassene legges til dynamisk via script.js basert på category i databasen */
+.element-box.ikke-metall { background-color: #a0ffa0; }
+.element-box.edelgass { background-color: #c0ffff; }
+.element-box.alkalimetall { background-color: #ff6666; }
+.element-box.jordalkalimetall { background-color: #ffdead; }
+.element-box.halvmetall { background-color: #cccc99; }
+.element-box.halogen { background-color: #ffff99; }
+.element-box.post-innskuddsmetall { background-color: #cccccc; }
+.element-box.innskuddsmetall { background-color: #ffc0c0; }
+.element-box.lantanoid { background-color: #ffbfff; }
+.element-box.aktinoid { background-color: #ff99cc; }
+.element-box.ukjent { background-color: #e8e8e8; }
 
+/* === SEKSJON: Visuelle Partikler og Atom === */
 .nucleus {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 0;  /* Fungerer nå som et nøyaktig senter-anker */
+    width: 0;  
     height: 0;
     z-index: 10;
 }
@@ -287,7 +340,7 @@ main {
 }
 
 .nucleus .particle {
-    position: absolute; /* Tillater hulter-til-bulter posisjonering */
+    position: absolute; 
     transform: translate(-50%, -50%);
 }
 
@@ -308,7 +361,6 @@ main {
     margin: 0; 
 }
 
-/* Nytt "skilt" for når kjernen blir for stor */
 .nucleus-label {
     position: absolute;
     top: 50%;
@@ -325,4 +377,4 @@ main {
     white-space: nowrap;
     pointer-events: none;
 }
-/* Version: #10 */
+/* Version: #15 */
