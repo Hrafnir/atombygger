@@ -1,4 +1,4 @@
-/* Version: #8 */
+/* Version: #11 */
 
 // === SEKSJON: Tilstand (State) ===
 // Her lagrer vi de nåværende dataene for byggeflaten vår.
@@ -17,10 +17,16 @@ const tabPeriodic = document.getElementById('tab-periodic');
 const sectionBuild = document.getElementById('build-section');
 const sectionPeriodic = document.getElementById('periodic-section');
 
-// Knapper for partikler
+// Knapper for partikler (Pluss)
 const btnAddProton = document.getElementById('btn-add-proton');
 const btnAddNeutron = document.getElementById('btn-add-neutron');
 const btnAddElectron = document.getElementById('btn-add-electron');
+
+// Knapper for partikler (Minus) - Lagt til i Versjon 11
+const btnRemoveProton = document.getElementById('btn-remove-proton');
+const btnRemoveNeutron = document.getElementById('btn-remove-neutron');
+const btnRemoveElectron = document.getElementById('btn-remove-electron');
+
 const btnReset = document.getElementById('btn-reset');
 
 // Analyse-panel elementer
@@ -31,7 +37,7 @@ const infoMass = document.getElementById('info-mass');
 const infoCharge = document.getElementById('info-charge');
 const infoState = document.getElementById('info-state');
 
-// Byggeflate elementer (Lagt til i Versjon 8)
+// Byggeflate elementer
 const nucleusContainer = document.getElementById('nucleus-container');
 const shellsContainer = document.getElementById('shells-container');
 
@@ -65,7 +71,7 @@ tabPeriodic.addEventListener('click', () => {
     switchTab('periodic');
 });
 
-// === SEKSJON: Visuell Tegning (NY) ===
+// === SEKSJON: Visuell Tegning ===
 function drawAtom() {
     console.log('[Tegning] Starter visuell opptegning av atomet...');
     
@@ -73,31 +79,69 @@ function drawAtom() {
     nucleusContainer.innerHTML = '';
     shellsContainer.innerHTML = '';
 
-    // 2. Tegn atomkjernen (Protoner og Nøytroner)
+    // 2. Tegn atomkjernen (Protoner og Nøytroner hulter til bulter)
     const totalNucleons = atomState.protons + atomState.neutrons;
-    console.log(`[Tegning] Tegner kjerne med ${totalNucleons} partikler.`);
+    console.log(`[Tegning] Tegner kjerne med totalt ${totalNucleons} partikler.`);
     
-    for(let i = 0; i < atomState.protons; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle proton';
-        p.textContent = '+';
-        nucleusContainer.appendChild(p);
+    const MAX_VISIBLE_NUCLEONS = 20;
+    let visibleProtons = atomState.protons;
+    let visibleNeutrons = atomState.neutrons;
+
+    // Hvis vi har for mange partikler, beregn proporsjonal visning for bakgrunnen
+    if (totalNucleons > MAX_VISIBLE_NUCLEONS) {
+        const ratio = MAX_VISIBLE_NUCLEONS / totalNucleons;
+        visibleProtons = Math.round(atomState.protons * ratio);
+        visibleNeutrons = MAX_VISIBLE_NUCLEONS - visibleProtons;
+    }
+
+    // Skyens radius vokser litt med antall partikler
+    const scatterRadius = 5 + ((visibleProtons + visibleNeutrons) * 0.8);
+
+    // Hjelpefunksjon for å spre partikler i en sirkulær sky
+    function createScatteredNucleon(type, symbol) {
+        const el = document.createElement('div');
+        el.className = `particle ${type}`;
+        if (symbol) el.textContent = symbol;
+        
+        // Tilfeldig vinkel og radius (bruk Math.sqrt for jevn fordeling innenfor arealet)
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * scatterRadius; 
+        
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        
+        // CSS håndterer sentrering over (x,y) med translate(-50%, -50%)
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+        
+        return el;
     }
     
-    for(let i = 0; i < atomState.neutrons; i++) {
-        const n = document.createElement('div');
-        n.className = 'particle neutron';
-        nucleusContainer.appendChild(n);
+    for(let i = 0; i < visibleProtons; i++) {
+        nucleusContainer.appendChild(createScatteredNucleon('proton', '+'));
+    }
+    
+    for(let i = 0; i < visibleNeutrons; i++) {
+        nucleusContainer.appendChild(createScatteredNucleon('neutron', ''));
+    }
+
+    // Sett på "skiltet" med tall hvis vi overstiger grensen
+    if (totalNucleons > MAX_VISIBLE_NUCLEONS) {
+        const label = document.createElement('div');
+        label.className = 'nucleus-label';
+        label.textContent = `${atomState.protons} p⁺ | ${atomState.neutrons} n⁰`;
+        nucleusContainer.appendChild(label);
+        console.log('[Tegning] La til tekstskilt for stor kjerne.');
     }
 
     // 3. Tegn elektronskall og elektroner
-    // Pedagogisk forenkling for ungdomsskole: 2, 8, 8, 18...
     const maxPerShell = [2, 8, 8, 18, 18, 32]; 
     let remainingElectrons = atomState.electrons;
     let currentShellIndex = 0;
     
-    const shellBaseRadius = 50; // Pixel radius for det innerste skallet
-    const shellGap = 40; // Avstand i piksler mellom hvert skall
+    // Vi skyver elektronene litt lenger ut hvis kjernen blir veldig stor
+    const baseShellRadius = 40 + scatterRadius; 
+    const shellGap = 35; 
 
     while(remainingElectrons > 0) {
         const capacity = maxPerShell[currentShellIndex] || 32;
@@ -105,32 +149,28 @@ function drawAtom() {
         
         console.log(`[Tegning] Skall ${currentShellIndex + 1}: Kapasitet=${capacity}, Inneholder=${electronsInThisShell} elektron(er).`);
 
-        const radius = shellBaseRadius + (currentShellIndex * shellGap);
+        const radius = baseShellRadius + (currentShellIndex * shellGap);
         const diameter = radius * 2;
         
-        // Opprett selve sirkelen for skallet
         const shellEl = document.createElement('div');
         shellEl.className = 'shell';
         shellEl.style.width = `${diameter}px`;
         shellEl.style.height = `${diameter}px`;
         shellsContainer.appendChild(shellEl);
 
-        // Plasser elektronene jevnt fordelt langs dette skallet
         for(let i = 0; i < electronsInThisShell; i++) {
             const e = document.createElement('div');
             e.className = 'particle electron';
             e.textContent = '-';
             
-            // Beregn vinkel i radianer for å spre dem i en sirkel
             const angle = (i / electronsInThisShell) * 2 * Math.PI;
             
-            // x og y koordinater relativt til midten av skallet (som har bredde/høyde = diameter)
             const x = radius + radius * Math.cos(angle);
             const y = radius + radius * Math.sin(angle);
             
             e.style.left = `${x}px`;
             e.style.top = `${y}px`;
-            e.style.transform = 'translate(-50%, -50%)'; // Sentrer elektronet over linjen
+            e.style.transform = 'translate(-50%, -50%)';
             
             shellEl.appendChild(e);
         }
@@ -138,10 +178,7 @@ function drawAtom() {
         remainingElectrons -= electronsInThisShell;
         currentShellIndex++;
         
-        if (currentShellIndex > 7) {
-            console.log('[Tegning] Advarsel: Nådd uventet høyt antall skall.');
-            break; // Sikkerhetsventil
-        }
+        if (currentShellIndex > 7) break;
     }
     console.log('[Tegning] Visuell opptegning fullført.');
 }
@@ -150,7 +187,7 @@ function drawAtom() {
 function updateUI() {
     console.log('[UI] Oppdaterer grensesnittet...');
     analyzeAtom();
-    drawAtom(); // Nytt kall lagt til her!
+    drawAtom();
 }
 
 function analyzeAtom() {
@@ -216,13 +253,13 @@ function updateParticleCount(particleType, amount) {
     
     if (particleType === 'proton') {
         atomState.protons += amount;
-        console.log(`[Partikkel-logikk] La til ${amount} proton(er).`);
+        console.log(`[Partikkel-logikk] Endret protoner med ${amount}.`);
     } else if (particleType === 'neutron') {
         atomState.neutrons += amount;
-        console.log(`[Partikkel-logikk] La til ${amount} nøytron(er).`);
+        console.log(`[Partikkel-logikk] Endret nøytroner med ${amount}.`);
     } else if (particleType === 'electron') {
         atomState.electrons += amount;
-        console.log(`[Partikkel-logikk] La til ${amount} elektron(er).`);
+        console.log(`[Partikkel-logikk] Endret elektroner med ${amount}.`);
     }
 
     if (atomState.protons < 0) atomState.protons = 0;
@@ -239,30 +276,23 @@ function resetAtom() {
     atomState.protons = 0;
     atomState.neutrons = 0;
     atomState.electrons = 0;
-    console.log(`[Partikkel-logikk] Status etter tilbakestilling: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
-    
     updateUI();
 }
 
-// Lyttefunksjoner for knapper
-btnAddProton.addEventListener('click', () => {
-    updateParticleCount('proton', 1);
-});
+// Lyttefunksjoner for Pluss-knapper
+btnAddProton.addEventListener('click', () => updateParticleCount('proton', 1));
+btnAddNeutron.addEventListener('click', () => updateParticleCount('neutron', 1));
+btnAddElectron.addEventListener('click', () => updateParticleCount('electron', 1));
 
-btnAddNeutron.addEventListener('click', () => {
-    updateParticleCount('neutron', 1);
-});
+// Lyttefunksjoner for Minus-knapper
+btnRemoveProton.addEventListener('click', () => updateParticleCount('proton', -1));
+btnRemoveNeutron.addEventListener('click', () => updateParticleCount('neutron', -1));
+btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron', -1));
 
-btnAddElectron.addEventListener('click', () => {
-    updateParticleCount('electron', 1);
-});
-
-btnReset.addEventListener('click', () => {
-    resetAtom();
-});
+btnReset.addEventListener('click', resetAtom);
 
 // Initialiser UI ved oppstart
 console.log('[System] script.js er lastet inn. Initialiserer UI.');
 updateUI();
 
-/* Version: #8 */
+/* Version: #11 */
