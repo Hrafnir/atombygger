@@ -1,4 +1,4 @@
-/* Version: #11 */
+/* Version: #12 */
 
 // === SEKSJON: Tilstand (State) ===
 // Her lagrer vi de nåværende dataene for byggeflaten vår.
@@ -22,7 +22,7 @@ const btnAddProton = document.getElementById('btn-add-proton');
 const btnAddNeutron = document.getElementById('btn-add-neutron');
 const btnAddElectron = document.getElementById('btn-add-electron');
 
-// Knapper for partikler (Minus) - Lagt til i Versjon 11
+// Knapper for partikler (Minus)
 const btnRemoveProton = document.getElementById('btn-remove-proton');
 const btnRemoveNeutron = document.getElementById('btn-remove-neutron');
 const btnRemoveElectron = document.getElementById('btn-remove-electron');
@@ -40,6 +40,9 @@ const infoState = document.getElementById('info-state');
 // Byggeflate elementer
 const nucleusContainer = document.getElementById('nucleus-container');
 const shellsContainer = document.getElementById('shells-container');
+
+// Periodesystem elementer
+const periodicGrid = document.getElementById('periodic-table-grid');
 
 // === SEKSJON: Fane-navigasjon ===
 function switchTab(tabName) {
@@ -70,6 +73,53 @@ tabBuild.addEventListener('click', () => {
 tabPeriodic.addEventListener('click', () => {
     switchTab('periodic');
 });
+
+// === SEKSJON: Periodesystem ===
+function generatePeriodicTable() {
+    console.log('[Periodesystem] Genererer visuelt rutenett...');
+    
+    if (typeof elementsData === 'undefined') {
+        console.error('[Periodesystem] FEIL: elementsData er ikke definert. Sjekk at elements.js er lastet.');
+        return;
+    }
+
+    periodicGrid.innerHTML = ''; // Tømmer rutenettet først
+
+    elementsData.forEach(element => {
+        const box = document.createElement('div');
+        box.className = 'element-box';
+        
+        const symbolEl = document.createElement('div');
+        symbolEl.className = 'element-symbol';
+        symbolEl.textContent = element.symbol;
+        
+        const numberEl = document.createElement('div');
+        numberEl.className = 'element-number';
+        numberEl.textContent = element.z;
+
+        box.appendChild(numberEl);
+        box.appendChild(symbolEl);
+
+        // Lyttefunksjon for å laste atomet inn i byggeflaten
+        box.addEventListener('click', () => {
+            console.log(`[Periodesystem] Valgte grunnstoff: ${element.name} (Z=${element.z})`);
+            
+            // Sett state til et nøytralt atom av valgt grunnstoff med standard isotop
+            atomState.protons = element.z;
+            atomState.electrons = element.z; 
+            atomState.neutrons = element.standardNeutrons;
+            
+            console.log(`[Periodesystem] Oppdaterer byggeflate til: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
+            
+            updateUI();
+            switchTab('build'); // Bytt automatisk til byggeflaten
+        });
+
+        periodicGrid.appendChild(box);
+    });
+    
+    console.log('[Periodesystem] Rutenett generert med', elementsData.length, 'grunnstoffer.');
+}
 
 // === SEKSJON: Visuell Tegning ===
 function drawAtom() {
@@ -293,6 +343,7 @@ btnReset.addEventListener('click', resetAtom);
 
 // Initialiser UI ved oppstart
 console.log('[System] script.js er lastet inn. Initialiserer UI.');
+generatePeriodicTable(); // Last inn periodesystemet
 updateUI();
 
-/* Version: #11 */
+/* Version: #12 */
