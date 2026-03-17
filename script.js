@@ -1,4 +1,4 @@
-/* Version: #37 */
+/* Version: #38 */
 
 // === SEKSJON: Tilstand (State) ===
 const atomState = {
@@ -299,10 +299,10 @@ btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron'
 btnReset.addEventListener('click', resetAtom);
 
 // === SEKSJON: Kjemilab (Interaktiv Sandkasse) ===
-let labMode = 'share'; // 'share' (Kovalent) eller 'steal' (Ione)
+let labMode = 'share'; 
 let labAtoms = []; 
 let atomIdCounter = 0;
-let labHistory = []; // Lagrer tilstander for "Angre"-knappen
+let labHistory = []; 
 
 const btnModeShare = document.getElementById('btn-mode-share');
 const btnModeSteal = document.getElementById('btn-mode-steal');
@@ -346,7 +346,6 @@ function initLabTrays() {
         labAllElementsTray.appendChild(btn);
     });
 
-    // Lytt på prebuilt-knappene
     document.querySelectorAll('.prebuilt-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const type = e.target.getAttribute('data-type');
@@ -372,29 +371,27 @@ btnModeSteal.addEventListener('click', () => {
     btnModeShare.classList.remove('active');
 });
 
-// Lagre tilstand for "Angre" funksjonen
+// History / Undo funksjon
 function saveLabState() {
-    // Siden DOM-elementer er komplekse å klone direkte med event listeners, 
-    // lagrer vi et "snapshot" ved å konvertere det abstrakte objektet til en tekststreng (JSON).
     const stateStr = JSON.stringify(labAtoms.map(a => ({
         id: a.id, symbol: a.symbol, z: a.z, group: a.group, charge: a.charge, x: a.x, y: a.y,
         electrons: a.electrons.map(e => ({
             id: e.id, ownerId: e.ownerId, isShared: e.isShared, sharedWithId: e.sharedWithId, angle: e.angle
+        })),
+        sharedBonds: a.sharedBonds.map(e => ({
+            id: e.id, sharedWithId: e.sharedWithId
         }))
     })));
     labHistory.push(stateStr);
 }
 
-// Angre siste trekk
 btnLabUndo.addEventListener('click', () => {
     if (labHistory.length === 0) return;
     
-    // Hent forrige tilstand
     const prevStateStr = labHistory.pop();
     const prevState = JSON.parse(prevStateStr);
     
-    // Tøm og gjenoppbygg tavlen basert på historikk
-    hardClearLab();
+    hardClearLab(false); // Ikke slett historikken mens vi angrer
     
     prevState.forEach(savedAtom => {
         rebuildAtomFromState(savedAtom);
@@ -405,15 +402,16 @@ btnLabUndo.addEventListener('click', () => {
 });
 
 btnLabClear.addEventListener('click', () => {
-    saveLabState(); // Tillater å angre tømmingen!
-    hardClearLab();
+    saveLabState(); 
+    hardClearLab(true);
 });
 
-function hardClearLab() {
+function hardClearLab(clearHistory = false) {
     labAtoms = [];
     labCanvas.querySelectorAll('.draggable-atom').forEach(e => e.remove());
     labBondsLayer.innerHTML = '';
     labPlaceholder.style.display = 'block';
+    if(clearHistory) labHistory = [];
     updateLabAnalysis();
 }
 
@@ -444,15 +442,13 @@ function createAtomObject(symbol, x, y) {
         elementRef: null
     };
 
-    const radius = 45;
     for (let i = 0; i < valenceCount; i++) {
-        const angle = (i / valenceCount) * 2 * Math.PI;
         atomObj.electrons.push({
             id: atomObj.id + '_e' + i,
             ownerId: atomObj.id,
             isShared: false,
             sharedWithId: null,
-            angle: angle,
+            angle: 0,
             elementRef: null
         });
     }
@@ -460,12 +456,11 @@ function createAtomObject(symbol, x, y) {
 }
 
 function addAtomToCanvas(symbol, x, y) {
-    saveLabState(); // Lagre før endring
+    saveLabState(); 
     const atomObj = createAtomObject(symbol, x, y);
     if(atomObj) renderAtomDOM(atomObj);
 }
 
-// Funksjon som faktisk bygger DOM-elementene basert på et abstrakt atomObjekt
 function renderAtomDOM(atomObj) {
     labPlaceholder.style.display = 'none';
     
@@ -510,24 +505,15 @@ function renderAtomDOM(atomObj) {
     labCanvas.appendChild(atomEl);
     labAtoms.push(atomObj);
     updateChargeVisuals(atomObj);
+    
+    recalculateElectronAngles(atomObj);
     updateLabAnalysis();
     return atomObj;
 }
 
-// Hjelpefunksjon for å gjenoppbygge ved "Angre"
 function rebuildAtomFromState(savedState) {
     const atomObj = { ...savedState, elementRef: null, sharedBonds: [] };
-    
-    // Opprett DOM
     renderAtomDOM(atomObj);
-    
-    // Gjenopprett delte bindinger logisk etter at alle atomer er lastet
-    atomObj.electrons.forEach(e => {
-        if (e.isShared && e.sharedWithId) {
-            // Hvis dette elektronet er delt, må vi logge at atomet det deles med har tilgang til det.
-            // Siden `rebuildAtomFromState` kalles sekvensielt, gjøres selve koblingen i drawSVGConnections etterpå.
-        }
-    });
 }
 
 function makeAtomDraggable(atomObj) {
@@ -536,7 +522,7 @@ function makeAtomDraggable(atomObj) {
     let startX, startY;
 
     function startDrag(clientX, clientY) {
-        saveLabState(); // Lagre posisjon før vi drar
+        saveLabState(); 
         isDragging = true;
         el.classList.add('dragging');
         startX = clientX - atomObj.x;
@@ -598,7 +584,7 @@ function makeElectronDraggable(eObj, sourceAtomObj) {
 
     function startDrag() {
         if (eObj.isShared) return; 
-        saveLabState(); // Lagrer før kjemisk reaksjon
+        saveLabState(); 
         isDragging = true;
         el.classList.add('dragging');
     }
@@ -625,7 +611,6 @@ function makeElectronDraggable(eObj, sourceAtomObj) {
                 executeShare(eObj, sourceAtomObj, dropTarget);
             }
         } else {
-            // Revert state change if dropped in void
             labHistory.pop(); 
             recalculateElectronAngles(sourceAtomObj);
         }
@@ -700,7 +685,7 @@ function executeShare(eObjA, sourceAtom, targetAtom) {
     const eObjB = targetAtom.electrons.find(e => !e.isShared);
     if (!eObjB) {
         alert(`${targetAtom.symbol} har ingen ledige elektroner å dele akkurat nå!`);
-        labHistory.pop(); // Angre lagringen
+        labHistory.pop();
         recalculateElectronAngles(sourceAtom);
         return;
     }
@@ -746,8 +731,6 @@ function updateChargeVisuals(atomObj) {
 
 function drawSVGConnections() {
     labBondsLayer.innerHTML = '';
-    
-    // Gjenoppbygg sharedBonds array for alle atomer (viktig for undo/redo state)
     labAtoms.forEach(a => a.sharedBonds = []);
     
     const bondGroups = {};
@@ -810,7 +793,6 @@ function drawSVGConnections() {
     });
 }
 
-// Subskript-generator for kjemiske formler (Hill-systemet)
 function getSubscript(n) {
     const subs = ['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
     return n.toString().split('').map(d => subs[d]).join('');
@@ -836,41 +818,34 @@ function updateLabAnalysis() {
 
         if (effectiveValence !== targetOctet) {
             if (atom.charge > 0 && nativeOwned === 0) {
-                // Stabil kation (Na+)
+                // Stabil kation
             } else {
                 allHappy = false;
             }
         }
     });
 
-    // Implementering av det kjemiske Hill-systemet for navngivning (Eks: NaCl istedenfor ClNa)
+    // Kjemisk Hill-system for navngivning (Eks: NaCl)
     const counts = {};
     labAtoms.forEach(a => counts[a.symbol] = (counts[a.symbol] || 0) + 1);
     
     let formula = '';
-    
-    // Karbon først
     if (counts['C']) {
         formula += 'C' + (counts['C'] > 1 ? getSubscript(counts['C']) : '');
         delete counts['C'];
-        // Så Hydrogen hvis Karbon er tilstede (Organisk)
         if (counts['H']) {
             formula += 'H' + (counts['H'] > 1 ? getSubscript(counts['H']) : '');
             delete counts['H'];
         }
     }
     
-    // For uorganiske salter, vil vi gjerne ha metall (kation) foran ikke-metall (anion). 
-    // Forenklet regel: Positiv ladning først.
     let remainingSymbols = Object.keys(counts);
     remainingSymbols.sort((a, b) => {
         const atomA = labAtoms.find(atom => atom.symbol === a);
         const atomB = labAtoms.find(atom => atom.symbol === b);
-        // Ioner: Pluss før minus (f.eks Na+ før Cl-)
         if (atomA && atomB && (atomA.charge !== 0 || atomB.charge !== 0)) {
             return atomB.charge - atomA.charge; 
         }
-        // Ellers alfabetisk
         return a.localeCompare(b);
     });
 
@@ -891,59 +866,95 @@ function updateLabAnalysis() {
     }
 }
 
-// === FERDIGBYGDE MAKROER ===
+// === FERDIGBYGDE MAKROER (Storskala gitter) ===
+function macroShare(a, b, double = false) {
+    let eA = a.electrons.find(e => !e.isShared);
+    if (eA) executeShare(eA, a, b);
+    if (double) {
+        let eA2 = a.electrons.find(e => !e.isShared);
+        if (eA2) executeShare(eA2, a, b);
+    }
+}
+
 function loadPrebuilt(type) {
     saveLabState();
-    hardClearLab();
+    hardClearLab(false);
 
     const w = labCanvas.clientWidth || 800;
-    const cx = w / 2 - 30; // Center X
+    const cx = w / 2 - 30; 
 
     if (type === 'H2O') {
         btnModeShare.click();
-        const O = renderAtomDOM(createAtomObject('O', cx, 100));
-        const H1 = renderAtomDOM(createAtomObject('H', cx - 120, 220));
-        const H2 = renderAtomDOM(createAtomObject('H', cx + 120, 220));
-        executeShare(O.electrons[0], O, H1);
-        executeShare(O.electrons[1], O, H2);
+        const O = renderAtomDOM(createAtomObject('O', cx, 150));
+        const H1 = renderAtomDOM(createAtomObject('H', cx - 120, 250));
+        const H2 = renderAtomDOM(createAtomObject('H', cx + 120, 250));
+        macroShare(O, H1);
+        macroShare(O, H2);
     } 
     else if (type === 'NaCl') {
         btnModeSteal.click();
-        const Na = renderAtomDOM(createAtomObject('Na', cx - 100, 150));
-        const Cl = renderAtomDOM(createAtomObject('Cl', cx + 100, 150));
+        const Na = renderAtomDOM(createAtomObject('Na', cx - 100, 200));
+        const Cl = renderAtomDOM(createAtomObject('Cl', cx + 100, 200));
         executeSteal(Na.electrons[0], Na, Cl);
     }
     else if (type === 'Diamond') {
         btnModeShare.click();
-        // Tetraedrisk (kryss-formet) karbon-struktur
-        const C_center = renderAtomDOM(createAtomObject('C', cx, 200));
-        const C_top = renderAtomDOM(createAtomObject('C', cx, 80));
-        const C_bot = renderAtomDOM(createAtomObject('C', cx, 320));
-        const C_left = renderAtomDOM(createAtomObject('C', cx - 120, 200));
-        const C_right = renderAtomDOM(createAtomObject('C', cx + 120, 200));
-        
-        executeShare(C_center.electrons[0], C_center, C_top);
-        executeShare(C_center.electrons[1], C_center, C_bot);
-        executeShare(C_center.electrons[2], C_center, C_left);
-        executeShare(C_center.electrons[3], C_center, C_right);
+        // Utvidet tetraedrisk gitter (11 atomer)
+        const cy = 250;
+        const c0 = renderAtomDOM(createAtomObject('C', cx, cy));
+        const c1 = renderAtomDOM(createAtomObject('C', cx, cy - 100));
+        const c2 = renderAtomDOM(createAtomObject('C', cx - 100, cy + 50));
+        const c3 = renderAtomDOM(createAtomObject('C', cx + 100, cy + 50));
+        const c_front = renderAtomDOM(createAtomObject('C', cx, cy + 120));
+
+        macroShare(c0, c1); macroShare(c0, c2); macroShare(c0, c3); macroShare(c0, c_front);
+
+        const c1_l = renderAtomDOM(createAtomObject('C', cx - 80, cy - 160));
+        const c1_r = renderAtomDOM(createAtomObject('C', cx + 80, cy - 160));
+        macroShare(c1, c1_l); macroShare(c1, c1_r);
+
+        const c2_l = renderAtomDOM(createAtomObject('C', cx - 160, cy + 0));
+        const c2_b = renderAtomDOM(createAtomObject('C', cx - 120, cy + 140));
+        macroShare(c2, c2_l); macroShare(c2, c2_b);
+
+        const c3_r = renderAtomDOM(createAtomObject('C', cx + 160, cy + 0));
+        const c3_b = renderAtomDOM(createAtomObject('C', cx + 120, cy + 140));
+        macroShare(c3, c3_r); macroShare(c3, c3_b);
     }
     else if (type === 'Graphite') {
         btnModeShare.click();
-        // Sekskantet grafén-ring for grafitt
-        const r = 100;
-        const carbons = [];
-        for(let i=0; i<6; i++) {
-            const angle = (i/6) * Math.PI * 2;
-            carbons.push(renderAtomDOM(createAtomObject('C', cx + Math.cos(angle)*r, 200 + Math.sin(angle)*r)));
-        }
-        // Bind dem i en sirkel med alternerende dobbelt- og enkeltbindinger (forenklet benzering for illustrasjon)
-        for(let i=0; i<6; i++) {
-            let next = (i+1)%6;
-            executeShare(carbons[i].electrons[0], carbons[i], carbons[next]); // Enkelt
-            if (i%2 === 0) {
-                executeShare(carbons[i].electrons[1], carbons[i], carbons[next]); // Dobbeltbinding på annenhver
-            }
-        }
+        // To sammenkoblede sekskanter (Honningkake) med alternerende dobbeltbindinger
+        const cy = 200;
+        const d = 70;
+        const dx = d * 0.866;
+        const dy = d * 0.5;
+
+        // Ring 1 (Venstre)
+        const c0 = renderAtomDOM(createAtomObject('C', cx - dx, cy - d));
+        const c1 = renderAtomDOM(createAtomObject('C', cx, cy - dy));
+        const c2 = renderAtomDOM(createAtomObject('C', cx, cy + dy));
+        const c3 = renderAtomDOM(createAtomObject('C', cx - dx, cy + d));
+        const c4 = renderAtomDOM(createAtomObject('C', cx - 2*dx, cy + dy));
+        const c5 = renderAtomDOM(createAtomObject('C', cx - 2*dx, cy - dy));
+
+        // Ring 2 (Høyre - deler c1 og c2)
+        const c6 = renderAtomDOM(createAtomObject('C', cx + dx, cy - d));
+        const c7 = renderAtomDOM(createAtomObject('C', cx + 2*dx, cy - dy));
+        const c8 = renderAtomDOM(createAtomObject('C', cx + 2*dx, cy + dy));
+        const c9 = renderAtomDOM(createAtomObject('C', cx + dx, cy + d));
+
+        macroShare(c0, c1, true); // Dobbeltbinding
+        macroShare(c1, c2);       // Enkeltbinding
+        macroShare(c2, c3, true); 
+        macroShare(c3, c4);       
+        macroShare(c4, c5, true); 
+        macroShare(c5, c0);       
+
+        macroShare(c1, c6);       
+        macroShare(c6, c7, true); 
+        macroShare(c7, c8);       
+        macroShare(c8, c9, true); 
+        macroShare(c9, c2);       
     }
 }
 
@@ -952,4 +963,4 @@ generatePeriodicTable();
 initLabTrays();
 updateUI();
 
-/* Version: #37 */
+/* Version: #38 */
