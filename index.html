@@ -13,7 +13,8 @@
             <button id="tab-build" class="tab-button active">Byggeflate</button>
             <button id="tab-periodic" class="tab-button">Periodesystem</button>
             <button id="tab-theory" class="tab-button">Teori</button>
-            <button id="tab-lab" class="tab-button">Kjemilab</button> </nav>
+            <button id="tab-lab" class="tab-button">Kjemilab</button>
+        </nav>
     </header>
 
     <main>
@@ -123,36 +124,39 @@
             
             <div class="lab-controls-container">
                 <h2>Reaktor-innstillinger</h2>
-                <p>Velg bindingstype og tilsett grunnstoffer fra listen under for å syntetisere nye stoffer.</p>
+                <p>Velg en interaksjonsmodus, legg atomer på brettet, og dra valenselektronene (de ytterste elektronene) for å skape bindinger!</p>
                 
                 <div class="bond-toggle-group">
-                    <button id="btn-bond-covalent" class="bond-btn active">Elektronparbinding (Molekyl)</button>
-                    <button id="btn-bond-ionic" class="bond-btn">Ionebinding (Salt)</button>
+                    <button id="btn-mode-share" class="bond-btn active">Del elektroner (Molekyl)</button>
+                    <button id="btn-mode-steal" class="bond-btn">Stjel elektroner (Salt)</button>
                 </div>
 
-                <div class="lab-element-tray" id="lab-element-tray">
+                <h3>Legg til atomer:</h3>
+                <div class="lab-element-tray" id="lab-usual-suspects">
+                    </div>
+                
+                <button id="btn-show-all-elements" class="outline-btn" style="width: 100%; margin-bottom: 10px;">Vis hele periodesystemet</button>
+                
+                <div id="lab-all-elements-tray" class="periodic-grid hidden" style="margin-bottom: 15px;">
                     </div>
 
-                <div class="lab-actions">
-                    <p class="selection-text">I reaktoren: <strong id="lab-selected-text">Ingenting</strong></p>
-                    <div class="action-buttons">
-                        <button id="btn-lab-synthesize" class="synthesize-btn">Koble sammen!</button>
-                        <button id="btn-lab-clear" class="clear-btn">Tøm reaktor</button>
-                    </div>
+                <div class="action-buttons" style="margin-top: 10px;">
+                    <button id="btn-lab-clear" class="clear-btn" style="width: 100%;">Tøm reaktor</button>
                 </div>
             </div>
 
             <div class="lab-workspace-row">
-                <div class="lab-canvas" id="lab-visual-canvas">
-                    <div id="lab-placeholder-text">Tilsett atomer og trykk "Koble sammen!"</div>
+                <div class="lab-canvas interactive" id="lab-interactive-canvas">
+                    <div id="lab-placeholder-text">Klikk på atomer i listen over for å legge dem på bordet.</div>
+                    
+                    <svg id="lab-bonds-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
                 </div>
 
                 <div class="info-panel" id="lab-analysis">
-                    <h2>Stoffanalyse</h2>
-                    <p><strong>Formel:</strong> <span id="lab-result-formula">-</span></p>
-                    <p><strong>Navn:</strong> <span id="lab-result-name">-</span></p>
-                    <p><strong>Bindingstype:</strong> <span id="lab-result-type">-</span></p>
-                    <p><strong>Tilstand:</strong> <span id="lab-result-status">Venter på syntese...</span></p>
+                    <h2>Reaksjonsanalyse</h2>
+                    <p><strong>Systemstatus:</strong> <span id="lab-system-status" style="color: #e67e22;">Ustabilt (Mangler elektroner)</span></p>
+                    <p><strong>Ferdig Formel:</strong> <span id="lab-result-formula">-</span></p>
+                    <p><strong>Forklaring:</strong> <span id="lab-result-explanation">Atomer søker å ha fulle ytterskall (oktettregelen). Dra elektroner fra ett atom til et annet!</span></p>
                 </div>
             </div>
 
