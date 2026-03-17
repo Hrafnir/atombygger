@@ -6,6 +6,7 @@
     <title>Atombyggeren</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <header>
@@ -112,13 +113,13 @@
 
         <section id="lab-section" class="view-section hidden lab-layout">
             
-            <div class="lab-workspace-row" style="flex-direction: column;">
+            <div class="lab-workspace-row" id="lab-export-area" style="flex-direction: column; background: var(--bg-color); padding-bottom: 10px;">
                 <div class="lab-canvas interactive" id="lab-interactive-canvas" style="min-height: 550px;">
                     <div id="lab-placeholder-text">Klikk på atomer i listen under for å legge dem på tavlen.</div>
                     <svg id="lab-bonds-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
                 </div>
 
-                <div class="info-panel" id="lab-analysis" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div class="info-panel" id="lab-analysis" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 15px;">
                     <div>
                         <h2>Reaksjonsanalyse</h2>
                         <p><strong>Ferdig Formel:</strong> <span id="lab-result-formula" style="font-size: 1.4rem; font-weight: bold; color: var(--primary-color);">-</span></p>
@@ -131,8 +132,13 @@
             </div>
 
             <div class="lab-controls-container" style="margin-top: 20px;">
-                <h2>Verktøykasse for Kjemilaben</h2>
                 
+                <div class="action-buttons" style="display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap;">
+                    <button id="btn-lab-fullscreen" class="outline-btn" style="flex: 1; margin: 0; font-size: 1.1rem; border-color: #3498db; color: #3498db;">⛶ Fullskjerm tavle</button>
+                    <button id="btn-save-canvas" class="outline-btn" style="flex: 1; margin: 0; font-size: 1.1rem; border-color: #27ae60; color: #27ae60;">📷 Lagre bilde (Tavle)</button>
+                    <button id="btn-save-full" class="outline-btn" style="flex: 1; margin: 0; font-size: 1.1rem; border-color: #8e44ad; color: #8e44ad;">📸 Lagre bilde (m/ tekst)</button>
+                </div>
+
                 <div class="bond-toggle-group">
                     <button id="btn-mode-share" class="bond-btn active">Del elektroner (Molekyl)</button>
                     <button id="btn-mode-steal" class="bond-btn">Stjel elektroner (Salt)</button>
