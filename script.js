@@ -1,4 +1,4 @@
-/* Version: #31 */
+/* Version: #32 */
 
 // === SEKSJON: Tilstand (State) ===
 const atomState = {
@@ -123,7 +123,7 @@ function generatePeriodicTable() {
     });
 }
 
-// === SEKSJON: Visuell Tegning (Atombygger) ===
+// === SEKSJON: Visuell Tegning (Atombyggeren) ===
 function drawAtom() {
     nucleusContainer.innerHTML = '';
     shellsContainer.innerHTML = '';
@@ -164,9 +164,9 @@ function drawAtom() {
 
     const maxPerShell = [2, 8, 8, 18, 18, 32, 32]; 
     let remainingElectrons = atomState.electrons;
-    
     let tempElectrons = remainingElectrons;
     let totalShells = 0;
+    
     for (let cap of maxPerShell) {
         if (tempElectrons > 0) {
             totalShells++;
@@ -174,15 +174,15 @@ function drawAtom() {
         } else break;
     }
 
-    let baseShellRadius = 40 + scatterRadius; 
+    // Fikser problemet med store atomer som Livermorium
+    let baseShellRadius = Math.max(35, scatterRadius + 15); 
     let shellGap = 35; 
-    const maxAllowedRadius = 180; 
-    const estimatedMaxRadius = baseShellRadius + (totalShells > 0 ? (totalShells - 1) * shellGap : 0);
+    const maxAllowedRadius = 160; // Sikrer at diameteren aldri overstiger 320px
+    let estimatedMaxRadius = baseShellRadius + (totalShells > 1 ? (totalShells - 1) * shellGap : 0);
 
-    if (estimatedMaxRadius > maxAllowedRadius) {
-        const scaleFactor = maxAllowedRadius / estimatedMaxRadius;
-        baseShellRadius *= scaleFactor;
-        shellGap *= scaleFactor;
+    if (estimatedMaxRadius > maxAllowedRadius && totalShells > 1) {
+        // Komprimerer avstanden mellom skallene i stedet for å krympe selve kjernen
+        shellGap = (maxAllowedRadius - baseShellRadius) / (totalShells - 1);
     }
 
     let currentShellIndex = 0;
@@ -235,7 +235,13 @@ function analyzeAtom() {
         infoElement.textContent = element.name;
         infoSymbol.textContent = element.symbol;
         infoAtomicWeight.textContent = element.atomicWeight;
-        infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z} og befinner seg i gruppe ${element.group}? Sjekk "Teori"-fanen for å lære hva dette betyr!`;
+        
+        // Kobler på din egen trivia-fil hvis den eksisterer!
+        if (element.trivia) {
+            infoTrivia.textContent = element.trivia;
+        } else {
+            infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z} og befinner seg i gruppe ${element.group}? Sjekk "Teori"-fanen for å lære hva dette betyr!`;
+        }
     } else {
         infoElement.textContent = "Ukjent (utenfor databasen)";
         infoSymbol.textContent = "?";
@@ -296,10 +302,9 @@ btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron'
 btnReset.addEventListener('click', resetAtom);
 
 
-// === SEKSJON: Kjemilab (Interaktiv Sandkasse) ===
-let labMode = 'share'; // 'share' eller 'steal'
-let labAtoms = []; // Holder oversikt over atomene på brettet
-let labBonds = []; // Holder oversikt over kovalente bindinger
+// === SEKSJON: Kjemilab (Interaktiv Sandkasse med Touch-støtte) ===
+let labMode = 'share'; // 'share' (Kovalent) eller 'steal' (Ione)
+let labAtoms = []; 
 let atomIdCounter = 0;
 
 const btnModeShare = document.getElementById('btn-mode-share');
@@ -315,13 +320,11 @@ const labResultFormula = document.getElementById('lab-result-formula');
 const labResultExplanation = document.getElementById('lab-result-explanation');
 const labPlaceholder = document.getElementById('lab-placeholder-text');
 
-// Farger for pedagogikk
 const atomColors = {
     'H': '#ecf0f1', 'C': '#34495e', 'O': '#e74c3c', 'N': '#3498db',
     'Na': '#9b59b6', 'Cl': '#2ecc71', 'Mg': '#f1c40f', 'Fe': '#e67e22'
 };
 
-// Initialiser menyene
 function initLabTrays() {
     const usuals = ['H', 'C', 'N', 'O', 'Na', 'Mg', 'Cl', 'Fe'];
     labUsualSuspects.innerHTML = '';
@@ -334,14 +337,13 @@ function initLabTrays() {
         labUsualSuspects.appendChild(btn);
     });
 
-    // Utvid-meny for alle grunnstoffer
     labAllElementsTray.innerHTML = '';
     elementsData.forEach(el => {
         const btn = document.createElement('button');
         btn.className = 'tray-btn';
         btn.textContent = el.symbol;
         btn.style.fontSize = '0.9rem';
-        if (el.category) btn.classList.add(el.category); // Låner farger fra periodesystemet
+        if (el.category) btn.classList.add(el.category);
         btn.addEventListener('click', () => addAtomToCanvas(el.symbol));
         labAllElementsTray.appendChild(btn);
     });
@@ -366,23 +368,20 @@ btnModeSteal.addEventListener('click', () => {
 
 btnLabClear.addEventListener('click', () => {
     labAtoms = [];
-    labBonds = [];
     labCanvas.querySelectorAll('.draggable-atom').forEach(e => e.remove());
     labBondsLayer.innerHTML = '';
     labPlaceholder.style.display = 'block';
     updateLabAnalysis();
 });
 
-// Beregner valenselektroner basert på gruppenummer i periodesystemet
 function getValenceElectrons(group, z) {
-    if (z === 2) return 2; // Helium
-    if (group === '-' || group === undefined) return 2; // Forenkling for Lantanider/Aktinider/Ukjente
+    if (z === 2) return 2; 
+    if (group === '-' || group === undefined) return 2; 
     if (group >= 13 && group <= 18) return group - 10;
     if (group >= 1 && group <= 2) return group;
-    return 2; // Standard for de fleste innskuddsmetaller (forenklet for ungdomsskole)
+    return 2; 
 }
 
-// Legger til et fysisk atom på brettet
 function addAtomToCanvas(symbol) {
     labPlaceholder.style.display = 'none';
     const elementData = elementsData.find(e => e.symbol === symbol);
@@ -394,12 +393,11 @@ function addAtomToCanvas(symbol) {
         id: 'atom_' + atomIdCounter++,
         symbol: symbol,
         z: elementData.z,
-        group: elementData.group,
-        charge: 0, // Ione-ladning
-        electrons: [], // Egne elektroner
-        sharedBonds: [], // Referanser til hvem den deler med
-        x: Math.random() * 200 + 50, // Tilfeldig startposisjon
-        y: Math.random() * 150 + 50,
+        charge: 0, 
+        electrons: [], 
+        sharedBonds: [], 
+        x: Math.random() * (labCanvas.clientWidth - 100) + 20, 
+        y: Math.random() * (labCanvas.clientHeight - 100) + 20,
         elementRef: null
     };
 
@@ -409,6 +407,7 @@ function addAtomToCanvas(symbol) {
     atomEl.style.left = `${atomObj.x}px`;
     atomEl.style.top = `${atomObj.y}px`;
     atomEl.style.backgroundColor = atomColors[symbol] || '#ecf0f1';
+    atomEl.style.touchAction = 'none'; // Hindrer at skjermen ruller når vi drar på touch-skjerm
     if (symbol === 'C' || symbol === 'N' || symbol === 'Fe') atomEl.style.color = 'white';
     
     const symbolSpan = document.createElement('span');
@@ -423,7 +422,6 @@ function addAtomToCanvas(symbol) {
 
     atomObj.elementRef = atomEl;
 
-    // Generer elektronene i bane rundt
     const radius = 45;
     for (let i = 0; i < valenceCount; i++) {
         const angle = (i / valenceCount) * 2 * Math.PI;
@@ -439,8 +437,7 @@ function addAtomToCanvas(symbol) {
         const eEl = document.createElement('div');
         eEl.className = 'valence-electron';
         eEl.id = eObj.id;
-        
-        // Posisjoner relativt til atomet sitt
+        eEl.style.touchAction = 'none';
         eEl.style.left = `calc(50% + ${Math.cos(angle) * radius}px)`;
         eEl.style.top = `calc(50% + ${Math.sin(angle) * radius}px)`;
         
@@ -457,27 +454,24 @@ function addAtomToCanvas(symbol) {
     updateLabAnalysis();
 }
 
-// Drag & Drop for Atomene
+// Interaksjonsmotor for PC og iPad (Touch)
 function makeAtomDraggable(atomObj) {
     const el = atomObj.elementRef;
     let isDragging = false;
     let startX, startY;
 
-    el.addEventListener('mousedown', (e) => {
-        if (e.target.classList.contains('valence-electron')) return; // Ikke dra atomet hvis du drar et elektron
+    function startDrag(clientX, clientY) {
         isDragging = true;
         el.classList.add('dragging');
-        startX = e.clientX - atomObj.x;
-        startY = e.clientY - atomObj.y;
-    });
+        startX = clientX - atomObj.x;
+        startY = clientY - atomObj.y;
+    }
 
-    document.addEventListener('mousemove', (e) => {
+    function drag(clientX, clientY) {
         if (!isDragging) return;
-        
-        // Hold atomet innenfor canvas-grensene
         const rect = labCanvas.getBoundingClientRect();
-        let newX = e.clientX - startX;
-        let newY = e.clientY - startY;
+        let newX = clientX - startX;
+        let newY = clientY - startY;
         
         if (newX < 0) newX = 0;
         if (newY < 0) newY = 0;
@@ -488,132 +482,173 @@ function makeAtomDraggable(atomObj) {
         atomObj.y = newY;
         el.style.left = `${newX}px`;
         el.style.top = `${newY}px`;
-        drawSVGConnections(); // Oppdater kovalente streker!
-    });
+        drawSVGConnections(); 
+    }
 
-    document.addEventListener('mouseup', () => {
+    function endDrag() {
         if (isDragging) {
             isDragging = false;
             el.classList.remove('dragging');
         }
+    }
+
+    // Mus-events
+    el.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('valence-electron')) return;
+        startDrag(e.clientX, e.clientY);
     });
+    document.addEventListener('mousemove', (e) => drag(e.clientX, e.clientY));
+    document.addEventListener('mouseup', endDrag);
+
+    // Touch-events for iPad
+    el.addEventListener('touchstart', (e) => {
+        if (e.target.classList.contains('valence-electron')) return;
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
+    
+    el.addEventListener('touchmove', (e) => {
+        if (isDragging) e.preventDefault();
+    }, {passive: false});
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        drag(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
+    
+    document.addEventListener('touchend', endDrag);
 }
 
-// Drag & Drop for Elektronene (Her skjer Kjemien!)
 function makeElectronDraggable(eObj, sourceAtomObj) {
     const el = eObj.elementRef;
     let isDragging = false;
 
-    el.addEventListener('mousedown', (e) => {
-        e.stopPropagation(); // Unngå å dra atomet
-        if (eObj.isShared) return; // Kan ikke dra elektroner som allerede er i en binding
-        
+    function startDrag() {
+        if (eObj.isShared) return; 
         isDragging = true;
         el.classList.add('dragging');
-    });
+    }
 
-    document.addEventListener('mousemove', (e) => {
+    function drag(clientX, clientY) {
         if (!isDragging) return;
-        
-        // Gjør elektronet absolutt posisjonert i forhold til canvas (bryter ut av atomet midlertidig)
-        const canvasRect = labCanvas.getBoundingClientRect();
-        const mouseX = e.clientX - canvasRect.left;
-        const mouseY = e.clientY - canvasRect.top;
-        
         el.style.position = 'fixed';
-        el.style.left = `${e.clientX}px`;
-        el.style.top = `${e.clientY}px`;
-    });
+        el.style.left = `${clientX}px`;
+        el.style.top = `${clientY}px`;
+    }
 
-    document.addEventListener('mouseup', (e) => {
+    function endDrag(clientX, clientY) {
         if (!isDragging) return;
         isDragging = false;
         el.classList.remove('dragging');
-        el.style.position = 'absolute'; // Tilbake til lokal posisjonering
+        el.style.position = 'absolute'; 
 
-        // Sjekk hvor vi slapp elektronet
-        const dropTarget = getAtomAtPosition(e.clientX, e.clientY);
+        const dropTarget = getAtomAtPosition(clientX, clientY);
 
         if (dropTarget && dropTarget.id !== sourceAtomObj.id) {
-            // Vi traff et nytt atom!
             if (labMode === 'steal') {
                 executeSteal(eObj, sourceAtomObj, dropTarget);
             } else if (labMode === 'share') {
                 executeShare(eObj, sourceAtomObj, dropTarget);
             }
         } else {
-            // Bommet, eller slapp på eget atom. Snap tilbake.
-            const radius = 45;
-            el.style.left = `calc(50% + ${Math.cos(eObj.angle) * radius}px)`;
-            el.style.top = `calc(50% + ${Math.sin(eObj.angle) * radius}px)`;
+            recalculateElectronAngles(sourceAtomObj);
         }
-        
         updateLabAnalysis();
+    }
+
+    el.addEventListener('mousedown', (e) => {
+        e.stopPropagation(); 
+        startDrag();
+    });
+    document.addEventListener('mousemove', (e) => drag(e.clientX, e.clientY));
+    document.addEventListener('mouseup', (e) => endDrag(e.clientX, e.clientY));
+
+    el.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        startDrag();
+    }, {passive: false});
+    
+    el.addEventListener('touchmove', (e) => {
+        if(isDragging) e.preventDefault(); 
+    }, {passive: false});
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        drag(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
+    
+    document.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        const touch = e.changedTouches[0];
+        endDrag(touch.clientX, touch.clientY);
     });
 }
 
-// Finner hvilket atom musen er over
 function getAtomAtPosition(clientX, clientY) {
     let found = null;
     labAtoms.forEach(atom => {
         const rect = atom.elementRef.getBoundingClientRect();
-        // Sjekk om musen er innenfor atomets bounding box
-        if (clientX >= rect.left && clientX <= rect.right &&
-            clientY >= rect.top && clientY <= rect.bottom) {
+        // Utvidet "hitbox" slik at det er enklere å treffe for elevene
+        const padding = 20; 
+        if (clientX >= rect.left - padding && clientX <= rect.right + padding &&
+            clientY >= rect.top - padding && clientY <= rect.bottom + padding) {
             found = atom;
         }
     });
     return found;
 }
 
-// Logikk: Ionebinding
+// Kjemi: Stjele elektroner (Ionebinding)
 function executeSteal(eObj, sourceAtom, targetAtom) {
-    // 1. Fjern elektron fra kilden
     sourceAtom.electrons = sourceAtom.electrons.filter(e => e.id !== eObj.id);
-    sourceAtom.charge += 1; // Mistet negativ ladning = blir positiv
+    sourceAtom.charge += 1; 
     
-    // 2. Legg til på målet
     eObj.ownerId = targetAtom.id;
     targetAtom.electrons.push(eObj);
-    targetAtom.charge -= 1; // Fikk negativ ladning = blir negativ
+    targetAtom.charge -= 1; 
 
-    // 3. Oppdater DOM
     targetAtom.elementRef.appendChild(eObj.elementRef);
     
-    // Fordel elektronene på målet jevnt utover
     recalculateElectronAngles(targetAtom);
     recalculateElectronAngles(sourceAtom);
     updateChargeVisuals(sourceAtom);
     updateChargeVisuals(targetAtom);
 }
 
-// Logikk: Elektronparbinding
-function executeShare(eObj, sourceAtom, targetAtom) {
-    // Vi binder dem sammen!
-    eObj.isShared = true;
-    eObj.sharedWithId = targetAtom.id;
-    eObj.elementRef.classList.add('shared');
+// Kjemi: Dele elektroner (Elektronparbinding)
+function executeShare(eObjA, sourceAtom, targetAtom) {
+    const eObjB = targetAtom.electrons.find(e => !e.isShared);
+    if (!eObjB) {
+        alert(`${targetAtom.symbol} har ingen ledige elektroner å dele akkurat nå!`);
+        recalculateElectronAngles(sourceAtom);
+        return;
+    }
+    
+    eObjA.isShared = true;
+    eObjA.sharedWithId = targetAtom.id;
+    eObjA.elementRef.classList.add('shared');
+    targetAtom.sharedBonds.push(eObjA);
 
-    // Målet må "registrere" at det får tilgang til et delt elektron
-    targetAtom.sharedBonds.push(eObj);
-
-    // Plasser elektronet visuelt midt imellom dem
-    // Vi lar CSS/SVG ta seg av streken, elektronet låses til sentrum av eget atom for enkelhets skyld, men farges rødt.
-    const radius = 45;
-    eObj.elementRef.style.left = `calc(50% + ${Math.cos(eObj.angle) * radius}px)`;
-    eObj.elementRef.style.top = `calc(50% + ${Math.sin(eObj.angle) * radius}px)`;
+    eObjB.isShared = true;
+    eObjB.sharedWithId = sourceAtom.id;
+    eObjB.elementRef.classList.add('shared');
+    sourceAtom.sharedBonds.push(eObjB);
 
     drawSVGConnections();
 }
 
-// Hjelpefunksjoner for visuell oppdatering
 function recalculateElectronAngles(atomObj) {
     const radius = 45;
     const count = atomObj.electrons.length;
-    atomObj.electrons.forEach((eObj, i) => {
-        eObj.angle = (i / count) * 2 * Math.PI;
-        eObj.elementRef.style.left = `calc(50% + ${Math.cos(eObj.angle) * radius}px)`;
-        eObj.elementRef.style.top = `calc(50% + ${Math.sin(eObj.angle) * radius}px)`;
+    let unsharedIndex = 0;
+    const unsharedCount = atomObj.electrons.filter(e => !e.isShared).length;
+
+    atomObj.electrons.forEach((eObj) => {
+        if (!eObj.isShared) {
+            eObj.angle = (unsharedIndex / unsharedCount) * 2 * Math.PI;
+            eObj.elementRef.style.left = `calc(50% + ${Math.cos(eObj.angle) * radius}px)`;
+            eObj.elementRef.style.top = `calc(50% + ${Math.sin(eObj.angle) * radius}px)`;
+            unsharedIndex++;
+        }
     });
 }
 
@@ -629,38 +664,68 @@ function updateChargeVisuals(atomObj) {
     }
 }
 
-// Tegner strekene for kovalente bindinger
+// Magien som tegner bindingene og posisjonerer elektronparene
 function drawSVGConnections() {
     labBondsLayer.innerHTML = '';
     
-    labAtoms.forEach(sourceAtom => {
-        sourceAtom.electrons.forEach(eObj => {
+    const bondGroups = {};
+    labAtoms.forEach(atom => {
+        atom.electrons.forEach(eObj => {
             if (eObj.isShared) {
-                const targetAtom = labAtoms.find(a => a.id === eObj.sharedWithId);
-                if (!targetAtom) return;
-
-                // Center of source atom
-                const x1 = sourceAtom.x + 30; // 30 is half width (60/2)
-                const y1 = sourceAtom.y + 30;
-                
-                // Center of target atom
-                const x2 = targetAtom.x + 30;
-                const y2 = targetAtom.y + 30;
-
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', x1);
-                line.setAttribute('y1', y1);
-                line.setAttribute('x2', x2);
-                line.setAttribute('y2', y2);
-                line.setAttribute('class', 'covalent-bond-line');
-                
-                labBondsLayer.appendChild(line);
+                const bondId = atom.id < eObj.sharedWithId ? `${atom.id}-${eObj.sharedWithId}` : `${eObj.sharedWithId}-${atom.id}`;
+                if(!bondGroups[bondId]) bondGroups[bondId] = [];
+                bondGroups[bondId].push({ atom, eObj });
             }
+        });
+        recalculateElectronAngles(atom);
+    });
+
+    Object.entries(bondGroups).forEach(([bondId, electrons]) => {
+        if(electrons.length === 0) return;
+        const atomA = electrons[0].atom;
+        const atomB = labAtoms.find(a => a.id === electrons[0].eObj.sharedWithId);
+        if(!atomB) return;
+        
+        const ax = atomA.x + 30;
+        const ay = atomA.y + 30;
+        const bx = atomB.x + 30;
+        const by = atomB.y + 30;
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', ax);
+        line.setAttribute('y1', ay);
+        line.setAttribute('x2', bx);
+        line.setAttribute('y2', by);
+        line.setAttribute('class', 'covalent-bond-line');
+        labBondsLayer.appendChild(line);
+
+        const mx = (ax + bx) / 2;
+        const my = (ay + by) / 2;
+        const dx = bx - ax;
+        const dy = by - ay;
+        const length = Math.sqrt(dx*dx + dy*dy) || 1;
+        const nx = -dy / length;
+        const ny = dx / length;
+
+        const directionX = dx / length;
+        const directionY = dy / length;
+
+        electrons.forEach((item, index) => {
+            const pairIndex = Math.floor(index / 2); 
+            const isFirstInPair = index % 2 === 0;
+            
+            const perpOffset = isFirstInPair ? 7 : -7;
+            const parallelOffset = (pairIndex - (electrons.length/4 - 0.5)) * 14; 
+
+            const globalX = mx + (nx * perpOffset) + (directionX * parallelOffset);
+            const globalY = my + (ny * perpOffset) + (directionY * parallelOffset);
+
+            item.eObj.elementRef.style.left = `${globalX - item.atom.x}px`;
+            item.eObj.elementRef.style.top = `${globalY - item.atom.y}px`;
         });
     });
 }
 
-// === Oktettregel Evaluering ===
 function updateLabAnalysis() {
     if (labAtoms.length === 0) {
         labSystemStatus.textContent = 'Tomt brett';
@@ -671,29 +736,24 @@ function updateLabAnalysis() {
     }
 
     let allHappy = true;
-    let explanation = "";
 
-    // Sjekk hvert atom på brettet
     labAtoms.forEach(atom => {
-        // Hvor mange elektroner "eier" eller "deler" dette atomet nå?
-        const nativeOwned = atom.electrons.length; // Inkluderer de han har stjålet
-        const sharedAccess = atom.sharedBonds.length; // De som andre deler MED ham
+        const nativeOwned = atom.electrons.length; 
+        const sharedAccess = atom.sharedBonds.length; 
         
         const effectiveValence = nativeOwned + sharedAccess;
-        const targetOctet = (atom.z <= 2) ? 2 : 8; // H og He vil bare ha 2
+        const targetOctet = (atom.z <= 2) ? 2 : 8; 
 
         if (effectiveValence !== targetOctet) {
-            // Unntak for ioner som har gitt fra seg ALT (og dermed har et fullt skall under!)
-            // For eksempel Na som gir bort 1 elektron har nå 0 valenselektroner, som er = stabilt Na+!
+            // Hvis atomet har gitt bort ALT (f.eks Na+) er det stabilt, for da er underliggende skall fullt!
             if (atom.charge > 0 && nativeOwned === 0) {
-                // Positivt ion med tømt ytterste skall er STABILT!
+                // Stabil cation
             } else {
                 allHappy = false;
             }
         }
     });
 
-    // Lag en enkel sum-formel av hva som er på brettet
     const counts = {};
     labAtoms.forEach(a => {
         counts[a.symbol] = (counts[a.symbol] || 0) + 1;
@@ -702,7 +762,7 @@ function updateLabAnalysis() {
     let formula = '';
     Object.keys(counts).sort().forEach(sym => {
         formula += sym;
-        if (counts[sym] > 1) formula += `₂`; // Veldig forenklet subskript for demo (fungerer for opptil 9)
+        if (counts[sym] > 1) formula += `₂`; 
     });
     labResultFormula.textContent = formula;
 
@@ -717,10 +777,9 @@ function updateLabAnalysis() {
     }
 }
 
-// Initialiser oppstart
 console.log('[System] script.js er lastet inn. Initialiserer UI.');
 generatePeriodicTable();
 initLabTrays();
 updateUI();
 
-/* Version: #31 */
+/* Version: #32 */
