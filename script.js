@@ -1,4 +1,4 @@
-/* Version: #16 */
+/* Version: #24 */
 
 // === SEKSJON: Tilstand (State) ===
 // Her lagrer vi de nåværende dataene for byggeflaten vår.
@@ -12,10 +12,12 @@ const atomState = {
 // Faner
 const tabBuild = document.getElementById('tab-build');
 const tabPeriodic = document.getElementById('tab-periodic');
+const tabTheory = document.getElementById('tab-theory'); // Ny i Versjon 24
 
 // Seksjoner (Visninger)
 const sectionBuild = document.getElementById('build-section');
 const sectionPeriodic = document.getElementById('periodic-section');
+const sectionTheory = document.getElementById('theory-section'); // Ny i Versjon 24
 
 // Knapper for partikler (Pluss)
 const btnAddProton = document.getElementById('btn-add-proton');
@@ -34,9 +36,10 @@ const infoElement = document.getElementById('info-element');
 const infoSymbol = document.getElementById('info-symbol');
 const infoAtomicNumber = document.getElementById('info-atomic-number');
 const infoMass = document.getElementById('info-mass');
+const infoAtomicWeight = document.getElementById('info-atomic-weight'); // Ny i Versjon 24
 const infoCharge = document.getElementById('info-charge');
 const infoState = document.getElementById('info-state');
-const infoTrivia = document.getElementById('info-trivia'); // Ny i Versjon 16
+const infoTrivia = document.getElementById('info-trivia');
 
 // Byggeflate elementer
 const nucleusContainer = document.getElementById('nucleus-container');
@@ -49,31 +52,34 @@ const periodicGrid = document.getElementById('periodic-table-grid');
 function switchTab(tabName) {
     console.log(`[Navigasjon] Forsøker å bytte til fane: ${tabName}`);
     
+    // Nullstill alle faner
+    tabBuild.classList.remove('active');
+    tabPeriodic.classList.remove('active');
+    tabTheory.classList.remove('active');
+    
+    sectionBuild.classList.add('hidden');
+    sectionPeriodic.classList.add('hidden');
+    sectionTheory.classList.add('hidden');
+
+    // Aktiver valgt fane
     if (tabName === 'build') {
         tabBuild.classList.add('active');
-        tabPeriodic.classList.remove('active');
-        
         sectionBuild.classList.remove('hidden');
-        sectionPeriodic.classList.add('hidden');
-        console.log('[Navigasjon] Viser Byggeflate, skjuler Periodesystem.');
-        
+        console.log('[Navigasjon] Viser Byggeflate.');
     } else if (tabName === 'periodic') {
         tabPeriodic.classList.add('active');
-        tabBuild.classList.remove('active');
-        
         sectionPeriodic.classList.remove('hidden');
-        sectionBuild.classList.add('hidden');
-        console.log('[Navigasjon] Viser Periodesystem, skjuler Byggeflate.');
+        console.log('[Navigasjon] Viser Periodesystem.');
+    } else if (tabName === 'theory') {
+        tabTheory.classList.add('active');
+        sectionTheory.classList.remove('hidden');
+        console.log('[Navigasjon] Viser Teori.');
     }
 }
 
-tabBuild.addEventListener('click', () => {
-    switchTab('build');
-});
-
-tabPeriodic.addEventListener('click', () => {
-    switchTab('periodic');
-});
+tabBuild.addEventListener('click', () => switchTab('build'));
+tabPeriodic.addEventListener('click', () => switchTab('periodic'));
+tabTheory.addEventListener('click', () => switchTab('theory')); // Ny i Versjon 24
 
 // === SEKSJON: Periodesystem ===
 function generatePeriodicTable() {
@@ -86,31 +92,48 @@ function generatePeriodicTable() {
 
     periodicGrid.innerHTML = ''; // Tømmer rutenettet først
 
+    // 1. Generer Gruppenummer (1-18) øverst
+    for (let i = 1; i <= 18; i++) {
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'group-number';
+        groupHeader.style.gridColumn = i;
+        groupHeader.style.gridRow = 1;
+        groupHeader.textContent = i;
+        periodicGrid.appendChild(groupHeader);
+    }
+
+    // 2. Generer Grunnstoffene
     elementsData.forEach(element => {
         const box = document.createElement('div');
         box.className = 'element-box';
         
-        // Legg til kategori-klasse for fargekoding (Nytt i Versjon 16)
+        // Legg til kategori-klasse for fargekoding
         if (element.category) {
             box.classList.add(element.category);
         }
 
-        // Posisjoner elementet i CSS Grid basert på databasen (Nytt i Versjon 16)
+        // Posisjoner elementet i CSS Grid. Vi legger til +1 på Y fordi rad 1 nå er gruppenummer.
         if (element.x && element.y) {
             box.style.gridColumn = element.x;
-            box.style.gridRow = element.y;
+            box.style.gridRow = element.y + 1; 
         }
-        
-        const symbolEl = document.createElement('div');
-        symbolEl.className = 'element-symbol';
-        symbolEl.textContent = element.symbol;
         
         const numberEl = document.createElement('div');
         numberEl.className = 'element-number';
         numberEl.textContent = element.z;
 
+        const symbolEl = document.createElement('div');
+        symbolEl.className = 'element-symbol';
+        symbolEl.textContent = element.symbol;
+        
+        // Nytt i Versjon 24: Viser atomvekten
+        const weightEl = document.createElement('div');
+        weightEl.className = 'element-weight';
+        weightEl.textContent = element.atomicWeight;
+
         box.appendChild(numberEl);
         box.appendChild(symbolEl);
+        box.appendChild(weightEl);
 
         // Lyttefunksjon for å laste atomet inn i byggeflaten
         box.addEventListener('click', () => {
@@ -130,7 +153,7 @@ function generatePeriodicTable() {
         periodicGrid.appendChild(box);
     });
     
-    console.log('[Periodesystem] Rutenett generert med', elementsData.length, 'grunnstoffer og plassert i Grid.');
+    console.log('[Periodesystem] Rutenett generert med gruppenummer og atomvekt.');
 }
 
 // === SEKSJON: Visuell Tegning ===
@@ -197,7 +220,7 @@ function drawAtom() {
     }
 
     // 3. Tegn elektronskall og elektroner
-    const maxPerShell = [2, 8, 8, 18, 18, 32, 32]; // Utvidet for å takle store atomer
+    const maxPerShell = [2, 8, 8, 18, 18, 32, 32]; 
     let remainingElectrons = atomState.electrons;
     let currentShellIndex = 0;
     
@@ -265,20 +288,21 @@ function analyzeAtom() {
     if (z === 0) {
         infoElement.textContent = "Ingen";
         infoSymbol.textContent = "-";
+        infoAtomicWeight.textContent = "0"; // Nytt i Versjon 24
         infoTrivia.textContent = "Bygg et atom eller velg fra periodesystemet for å lære mer!";
     } else if (element) {
         infoElement.textContent = element.name;
         infoSymbol.textContent = element.symbol;
-        // Håndter trivia-utskrift (Nytt i Versjon 16)
-        if (element.trivia && element.trivia.trim() !== "") {
-            infoTrivia.textContent = element.trivia;
-        } else {
-            infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z}? Legg til trivia i databasen for å lære mer!`;
-        }
+        infoAtomicWeight.textContent = element.atomicWeight; // Nytt i Versjon 24
+        
+        // Håndter trivia (vi bruker nå en standardtekst i påvente av ekstern trivia-fil)
+        infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z} og befinner seg i gruppe ${element.group}? Sjekk "Teori"-fanen for å lære hva dette betyr!`;
+        
     } else {
         infoElement.textContent = "Ukjent (utenfor databasen)";
         infoSymbol.textContent = "?";
-        infoTrivia.textContent = "Denne partikkelkombinasjonen eksisterer ikke som et kjent grunnstoff.";
+        infoAtomicWeight.textContent = "?";
+        infoTrivia.textContent = "Denne partikkelkombinasjonen eksisterer ikke som et kjent grunnstoff i naturen.";
     }
 
     const mass = z + n;
@@ -367,4 +391,4 @@ console.log('[System] script.js er lastet inn. Initialiserer UI.');
 generatePeriodicTable(); // Last inn periodesystemet med riktig layout og farger
 updateUI();
 
-/* Version: #16 */
+/* Version: #24 */
