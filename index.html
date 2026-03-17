@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atombyggeren</title>
-    <link rel="icon" href="data:,"> <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
@@ -19,26 +20,21 @@
 
     <main>
         <section id="build-section" class="view-section active">
-            
             <div class="build-top-row">
                 <div class="controls-panel">
                     <h2>Verktøykasse</h2>
-                    
                     <div class="control-row">
                         <button id="btn-add-proton" class="particle-btn proton">+ Proton (p⁺)</button>
                         <button id="btn-remove-proton" class="particle-btn proton outline">-</button>
                     </div>
-                    
                     <div class="control-row">
                         <button id="btn-add-neutron" class="particle-btn neutron">+ Nøytron (n⁰)</button>
                         <button id="btn-remove-neutron" class="particle-btn neutron outline">-</button>
                     </div>
-                    
                     <div class="control-row">
                         <button id="btn-add-electron" class="particle-btn electron">+ Elektron (e⁻)</button>
                         <button id="btn-remove-electron" class="particle-btn electron outline">-</button>
                     </div>
-
                     <button id="btn-reset" class="reset-btn">Tøm byggeflate</button>
                 </div>
                 
@@ -63,7 +59,6 @@
                 <h2>Fakta & Trivia</h2>
                 <p id="info-trivia">Bygg et atom eller velg fra periodesystemet for å lære mer!</p>
             </div>
-            
         </section>
 
         <section id="periodic-section" class="view-section hidden">
@@ -88,7 +83,6 @@
         <section id="theory-section" class="view-section hidden theory-layout">
             <h2>Kjemiske Begreper</h2>
             <div class="theory-content">
-                
                 <div class="theory-card">
                     <h3>Hva er Periodesystemet?</h3>
                     <p>Periodesystemet er kjemiens verdenskart. Det er et system som sorterer alle kjente grunnstoffer i universet etter deres <strong>atomnummer</strong> (antall protoner i kjernen). Det ble opprinnelig satt i system av den russiske forskeren Dmitri Mendelejev i 1869.</p>
@@ -98,17 +92,14 @@
                         <li><strong>Edelgasser:</strong> Den aller siste kolonnen til høyre. Disse har fulle ytterskall og vil helst ikke reagere med andre stoffer.</li>
                     </ul>
                 </div>
-
                 <div class="theory-card">
                     <h3>Hva betyr Atomvekt (g/mol)?</h3>
                     <p>Et atom er så ufattelig lite at vi ikke kan veie det i vanlige gram på en kjøkkenvekt. Derfor bruker kjemikere to spesielle begreper for å snakke om massen til atomer:</p>
                     <ul>
                         <li><strong>Atommasse (u):</strong> Massen til ett enkelt atom. Protoner og nøytroner veier ca. 1 u hver. Elektroner veier nesten ingenting.</li>
-                        <li><strong>Molar masse (g/mol):</strong> Hvis du samler en gigantisk haug med nøyaktig $6.022 \times 10^{23}$ atomer (dette antallet kalles et "mol"), forteller atomvekten deg hvor mange gram denne haugen veier. For eksempel: 1 mol med Karbon-atomer veier omtrent 12 gram. Derfor er atomvekten til karbon 12 g/mol.</li>
+                        <li><strong>Molar masse (g/mol):</strong> Hvis du samler en gigantisk haug med nøyaktig $6.022 \times 10^{23}$ atomer (et "mol"), forteller atomvekten deg hvor mange gram haugen veier. For eksempel: 1 mol Karbon-atomer veier ca 12 gram. Derfor er atomvekten til karbon 12 g/mol.</li>
                     </ul>
-                    <p><strong>Hvorfor er det ofte desimaltall?</strong> I naturen finnes grunnstoffer i ulike varianter kalt <em>isotoper</em> (de har ulikt antall nøytroner). Atomvekten i periodesystemet er et gjennomsnitt av alle disse naturlige isotopene. Derfor veier Klor 35,45 g/mol, fordi det er en blanding av Klor-35 og Klor-37 isotoper.</p>
                 </div>
-
                 <div class="theory-card">
                     <h3>Ioner og Isotoper</h3>
                     <ul>
@@ -116,47 +107,61 @@
                         <li><strong>Ion:</strong> Et atom som har <em>forskjellig antall protoner og elektroner</em>. Dette gir atomet en elektrisk ladning. Mangler det elektroner blir det positivt (+), har det ekstra elektroner blir det negativt (-).</li>
                     </ul>
                 </div>
-
             </div>
         </section>
 
         <section id="lab-section" class="view-section hidden lab-layout">
             
-            <div class="lab-controls-container">
-                <h2>Reaktor-innstillinger</h2>
-                <p>Velg en interaksjonsmodus, legg atomer på brettet, og dra valenselektronene (de ytterste elektronene) for å skape bindinger!</p>
+            <div class="lab-workspace-row" style="flex-direction: column;">
+                <div class="lab-canvas interactive" id="lab-interactive-canvas" style="min-height: 550px;">
+                    <div id="lab-placeholder-text">Klikk på atomer i listen under for å legge dem på tavlen.</div>
+                    <svg id="lab-bonds-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
+                </div>
+
+                <div class="info-panel" id="lab-analysis" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <h2>Reaksjonsanalyse</h2>
+                        <p><strong>Ferdig Formel:</strong> <span id="lab-result-formula" style="font-size: 1.4rem; font-weight: bold; color: var(--primary-color);">-</span></p>
+                        <p><strong>Systemstatus:</strong> <span id="lab-system-status" style="color: #e67e22;">Ustabilt (Mangler elektroner)</span></p>
+                    </div>
+                    <div style="max-width: 50%;">
+                        <p><strong>Forklaring:</strong> <span id="lab-result-explanation">Atomer søker å ha fulle ytterskall (oktettregelen). Dra elektroner fra ett atom til et annet!</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lab-controls-container" style="margin-top: 20px;">
+                <h2>Verktøykasse for Kjemilaben</h2>
                 
                 <div class="bond-toggle-group">
                     <button id="btn-mode-share" class="bond-btn active">Del elektroner (Molekyl)</button>
                     <button id="btn-mode-steal" class="bond-btn">Stjel elektroner (Salt)</button>
                 </div>
 
-                <h3>Legg til atomer:</h3>
-                <div class="lab-element-tray" id="lab-usual-suspects">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 2; min-width: 300px;">
+                        <h3>1. Legg til atomer:</h3>
+                        <div class="lab-element-tray" id="lab-usual-suspects">
+                            </div>
+                        <button id="btn-show-all-elements" class="outline-btn" style="width: 100%; margin-bottom: 10px;">Vis hele periodesystemet</button>
+                        <div id="lab-all-elements-tray" class="periodic-grid hidden" style="margin-bottom: 15px;">
+                            </div>
                     </div>
-                
-                <button id="btn-show-all-elements" class="outline-btn" style="width: 100%; margin-bottom: 10px;">Vis hele periodesystemet</button>
-                
-                <div id="lab-all-elements-tray" class="periodic-grid hidden" style="margin-bottom: 15px;">
+
+                    <div style="flex: 1; min-width: 250px;">
+                        <h3>2. Ferdigbygde stoffer:</h3>
+                        <div class="prebuilt-tray" id="lab-prebuilts">
+                            <button class="prebuilt-btn" data-type="H2O">Vannmolekyl (H₂O)</button>
+                            <button class="prebuilt-btn" data-type="NaCl">Koksalt (NaCl)</button>
+                            <button class="prebuilt-btn" data-type="Diamond">Diamant (Karbon-gitter)</button>
+                            <button class="prebuilt-btn" data-type="Graphite">Grafitt (Karbon-lag)</button>
+                        </div>
                     </div>
-
-                <div class="action-buttons" style="margin-top: 10px;">
-                    <button id="btn-lab-clear" class="clear-btn" style="width: 100%;">Tøm reaktor</button>
-                </div>
-            </div>
-
-            <div class="lab-workspace-row">
-                <div class="lab-canvas interactive" id="lab-interactive-canvas">
-                    <div id="lab-placeholder-text">Klikk på atomer i listen over for å legge dem på bordet.</div>
-                    
-                    <svg id="lab-bonds-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
                 </div>
 
-                <div class="info-panel" id="lab-analysis">
-                    <h2>Reaksjonsanalyse</h2>
-                    <p><strong>Systemstatus:</strong> <span id="lab-system-status" style="color: #e67e22;">Ustabilt (Mangler elektroner)</span></p>
-                    <p><strong>Ferdig Formel:</strong> <span id="lab-result-formula">-</span></p>
-                    <p><strong>Forklaring:</strong> <span id="lab-result-explanation">Atomer søker å ha fulle ytterskall (oktettregelen). Dra elektroner fra ett atom til et annet!</span></p>
+                <div class="action-buttons" style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="btn-lab-undo" class="outline-btn" style="flex: 1; margin: 0; font-size: 1.1rem;">↶ Angre siste trekk</button>
+                    <button id="btn-lab-clear" class="clear-btn" style="flex: 1; font-size: 1.1rem;">Tøm tavlen</button>
                 </div>
             </div>
 
