@@ -1,4 +1,4 @@
-/* Version: #38 */
+/* Version: #41 */
 
 // === SEKSJON: Tilstand (State) ===
 const atomState = {
@@ -318,6 +318,12 @@ const labResultFormula = document.getElementById('lab-result-formula');
 const labResultExplanation = document.getElementById('lab-result-explanation');
 const labPlaceholder = document.getElementById('lab-placeholder-text');
 
+// Eksport og Fullskjerm knapper (Versjon 41)
+const btnLabFullscreen = document.getElementById('btn-lab-fullscreen');
+const btnSaveCanvas = document.getElementById('btn-save-canvas');
+const btnSaveFull = document.getElementById('btn-save-full');
+const labExportArea = document.getElementById('lab-export-area');
+
 const atomColors = {
     'H': '#ecf0f1', 'C': '#34495e', 'O': '#e74c3c', 'N': '#3498db',
     'Na': '#9b59b6', 'Cl': '#2ecc71', 'Mg': '#f1c40f', 'Fe': '#e67e22'
@@ -371,6 +377,63 @@ btnModeSteal.addEventListener('click', () => {
     btnModeShare.classList.remove('active');
 });
 
+// Fullskjerm API Logikk
+btnLabFullscreen.addEventListener('click', () => {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (labExportArea.requestFullscreen) {
+            labExportArea.requestFullscreen();
+        } else if (labExportArea.webkitRequestFullscreen) {
+            labExportArea.webkitRequestFullscreen();
+        }
+        btnLabFullscreen.textContent = '🗙 Avslutt fullskjerm';
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+        btnLabFullscreen.textContent = '⛶ Fullskjerm tavle';
+    }
+});
+
+// Lytter for å oppdatere tekst hvis bruker trykker ESC for å avslutte fullskjerm
+document.addEventListener('fullscreenchange', updateFullscreenBtn);
+document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+
+function updateFullscreenBtn() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        btnLabFullscreen.textContent = '⛶ Fullskjerm tavle';
+    }
+}
+
+// Bildeeksport Logikk (krever html2canvas script i index.html)
+function downloadCanvasImage(canvas, baseName) {
+    const link = document.createElement('a');
+    let formula = labResultFormula.textContent;
+    if (formula === '-' || formula === '') formula = 'Blanding';
+    link.download = `Kjemilab_${formula}_${baseName}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+btnSaveCanvas.addEventListener('click', () => {
+    if (typeof html2canvas === 'undefined') {
+        alert("Bildeverktøyet er ikke lastet inn riktig. Sjekk internettforbindelsen din.");
+        return;
+    }
+    // Setter backgroundColor manuelt siden boksen vår av og til blir transparent ved export
+    html2canvas(labCanvas, { backgroundColor: '#2c3e50' }).then(canvas => {
+        downloadCanvasImage(canvas, 'Tavle');
+    });
+});
+
+btnSaveFull.addEventListener('click', () => {
+    if (typeof html2canvas === 'undefined') return;
+    html2canvas(labExportArea, { backgroundColor: '#f4f7f6' }).then(canvas => {
+        downloadCanvasImage(canvas, 'Komplett');
+    });
+});
+
 // History / Undo funksjon
 function saveLabState() {
     const stateStr = JSON.stringify(labAtoms.map(a => ({
@@ -387,11 +450,10 @@ function saveLabState() {
 
 btnLabUndo.addEventListener('click', () => {
     if (labHistory.length === 0) return;
-    
     const prevStateStr = labHistory.pop();
     const prevState = JSON.parse(prevStateStr);
     
-    hardClearLab(false); // Ikke slett historikken mens vi angrer
+    hardClearLab(false); 
     
     prevState.forEach(savedAtom => {
         rebuildAtomFromState(savedAtom);
@@ -963,4 +1025,4 @@ generatePeriodicTable();
 initLabTrays();
 updateUI();
 
-/* Version: #38 */
+/* Version: #41 */
