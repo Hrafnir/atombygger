@@ -1,4 +1,4 @@
-/* Version: #32 */
+/* Version: #34 */
 
 // === SEKSJON: Tilstand (State) ===
 const atomState = {
@@ -174,14 +174,12 @@ function drawAtom() {
         } else break;
     }
 
-    // Fikser problemet med store atomer som Livermorium
     let baseShellRadius = Math.max(35, scatterRadius + 15); 
     let shellGap = 35; 
-    const maxAllowedRadius = 160; // Sikrer at diameteren aldri overstiger 320px
+    const maxAllowedRadius = 160; 
     let estimatedMaxRadius = baseShellRadius + (totalShells > 1 ? (totalShells - 1) * shellGap : 0);
 
     if (estimatedMaxRadius > maxAllowedRadius && totalShells > 1) {
-        // Komprimerer avstanden mellom skallene i stedet for å krympe selve kjernen
         shellGap = (maxAllowedRadius - baseShellRadius) / (totalShells - 1);
     }
 
@@ -236,7 +234,6 @@ function analyzeAtom() {
         infoSymbol.textContent = element.symbol;
         infoAtomicWeight.textContent = element.atomicWeight;
         
-        // Kobler på din egen trivia-fil hvis den eksisterer!
         if (element.trivia) {
             infoTrivia.textContent = element.trivia;
         } else {
@@ -301,8 +298,7 @@ btnRemoveNeutron.addEventListener('click', () => updateParticleCount('neutron', 
 btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron', -1));
 btnReset.addEventListener('click', resetAtom);
 
-
-// === SEKSJON: Kjemilab (Interaktiv Sandkasse med Touch-støtte) ===
+// === SEKSJON: Kjemilab (Interaktiv Sandkasse) ===
 let labMode = 'share'; // 'share' (Kovalent) eller 'steal' (Ione)
 let labAtoms = []; 
 let atomIdCounter = 0;
@@ -407,7 +403,7 @@ function addAtomToCanvas(symbol) {
     atomEl.style.left = `${atomObj.x}px`;
     atomEl.style.top = `${atomObj.y}px`;
     atomEl.style.backgroundColor = atomColors[symbol] || '#ecf0f1';
-    atomEl.style.touchAction = 'none'; // Hindrer at skjermen ruller når vi drar på touch-skjerm
+    atomEl.style.touchAction = 'none'; 
     if (symbol === 'C' || symbol === 'N' || symbol === 'Fe') atomEl.style.color = 'white';
     
     const symbolSpan = document.createElement('span');
@@ -454,7 +450,6 @@ function addAtomToCanvas(symbol) {
     updateLabAnalysis();
 }
 
-// Interaksjonsmotor for PC og iPad (Touch)
 function makeAtomDraggable(atomObj) {
     const el = atomObj.elementRef;
     let isDragging = false;
@@ -492,7 +487,6 @@ function makeAtomDraggable(atomObj) {
         }
     }
 
-    // Mus-events
     el.addEventListener('mousedown', (e) => {
         if (e.target.classList.contains('valence-electron')) return;
         startDrag(e.clientX, e.clientY);
@@ -500,7 +494,6 @@ function makeAtomDraggable(atomObj) {
     document.addEventListener('mousemove', (e) => drag(e.clientX, e.clientY));
     document.addEventListener('mouseup', endDrag);
 
-    // Touch-events for iPad
     el.addEventListener('touchstart', (e) => {
         if (e.target.classList.contains('valence-electron')) return;
         startDrag(e.touches[0].clientX, e.touches[0].clientY);
@@ -583,21 +576,30 @@ function makeElectronDraggable(eObj, sourceAtomObj) {
     });
 }
 
+// Forbedret hitbox-sjekk med ekte sirkulær avstandsmåling (Euklidsk distanse)
 function getAtomAtPosition(clientX, clientY) {
     let found = null;
+    let minDistance = 10000;
+    const canvasRect = labCanvas.getBoundingClientRect();
+    const mouseX = clientX - canvasRect.left;
+    const mouseY = clientY - canvasRect.top;
+
     labAtoms.forEach(atom => {
-        const rect = atom.elementRef.getBoundingClientRect();
-        // Utvidet "hitbox" slik at det er enklere å treffe for elevene
-        const padding = 20; 
-        if (clientX >= rect.left - padding && clientX <= rect.right + padding &&
-            clientY >= rect.top - padding && clientY <= rect.bottom + padding) {
+        const atomCenterX = atom.x + 30; // Atomet er 60px bredt
+        const atomCenterY = atom.y + 30;
+        
+        // Pytagoras for å finne avstand fra mus til sentrum av atomet
+        const dist = Math.hypot(mouseX - atomCenterX, mouseY - atomCenterY);
+        
+        // Hvis avstanden er mindre enn 55 piksler, regner vi det som et treff
+        if (dist < 55 && dist < minDistance) {
+            minDistance = dist;
             found = atom;
         }
     });
     return found;
 }
 
-// Kjemi: Stjele elektroner (Ionebinding)
 function executeSteal(eObj, sourceAtom, targetAtom) {
     sourceAtom.electrons = sourceAtom.electrons.filter(e => e.id !== eObj.id);
     sourceAtom.charge += 1; 
@@ -614,7 +616,6 @@ function executeSteal(eObj, sourceAtom, targetAtom) {
     updateChargeVisuals(targetAtom);
 }
 
-// Kjemi: Dele elektroner (Elektronparbinding)
 function executeShare(eObjA, sourceAtom, targetAtom) {
     const eObjB = targetAtom.electrons.find(e => !e.isShared);
     if (!eObjB) {
@@ -664,7 +665,6 @@ function updateChargeVisuals(atomObj) {
     }
 }
 
-// Magien som tegner bindingene og posisjonerer elektronparene
 function drawSVGConnections() {
     labBondsLayer.innerHTML = '';
     
@@ -745,9 +745,8 @@ function updateLabAnalysis() {
         const targetOctet = (atom.z <= 2) ? 2 : 8; 
 
         if (effectiveValence !== targetOctet) {
-            // Hvis atomet har gitt bort ALT (f.eks Na+) er det stabilt, for da er underliggende skall fullt!
             if (atom.charge > 0 && nativeOwned === 0) {
-                // Stabil cation
+                // Stabil ion (tømt ytterskall betyr at underliggende er fullt)
             } else {
                 allHappy = false;
             }
@@ -782,4 +781,4 @@ generatePeriodicTable();
 initLabTrays();
 updateUI();
 
-/* Version: #32 */
+/* Version: #34 */
