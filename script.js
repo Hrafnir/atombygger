@@ -1,4 +1,4 @@
-/* Version: #25 */
+/* Version: #28 */
 
 // === SEKSJON: Tilstand (State) ===
 // Her lagrer vi de nåværende dataene for byggeflaten vår.
@@ -13,11 +13,13 @@ const atomState = {
 const tabBuild = document.getElementById('tab-build');
 const tabPeriodic = document.getElementById('tab-periodic');
 const tabTheory = document.getElementById('tab-theory');
+const tabLab = document.getElementById('tab-lab'); // Ny i Versjon 28
 
 // Seksjoner (Visninger)
 const sectionBuild = document.getElementById('build-section');
 const sectionPeriodic = document.getElementById('periodic-section');
 const sectionTheory = document.getElementById('theory-section');
+const sectionLab = document.getElementById('lab-section'); // Ny i Versjon 28
 
 // Knapper for partikler (Pluss)
 const btnAddProton = document.getElementById('btn-add-proton');
@@ -56,10 +58,12 @@ function switchTab(tabName) {
     tabBuild.classList.remove('active');
     tabPeriodic.classList.remove('active');
     tabTheory.classList.remove('active');
+    tabLab.classList.remove('active');
     
     sectionBuild.classList.add('hidden');
     sectionPeriodic.classList.add('hidden');
     sectionTheory.classList.add('hidden');
+    sectionLab.classList.add('hidden');
 
     // Aktiver valgt fane
     if (tabName === 'build') {
@@ -74,12 +78,17 @@ function switchTab(tabName) {
         tabTheory.classList.add('active');
         sectionTheory.classList.remove('hidden');
         console.log('[Navigasjon] Viser Teori.');
+    } else if (tabName === 'lab') {
+        tabLab.classList.add('active');
+        sectionLab.classList.remove('hidden');
+        console.log('[Navigasjon] Viser Kjemilab.');
     }
 }
 
 tabBuild.addEventListener('click', () => switchTab('build'));
 tabPeriodic.addEventListener('click', () => switchTab('periodic'));
 tabTheory.addEventListener('click', () => switchTab('theory'));
+tabLab.addEventListener('click', () => switchTab('lab'));
 
 // === SEKSJON: Periodesystem ===
 function generatePeriodicTable() {
@@ -139,27 +148,19 @@ function generatePeriodicTable() {
             atomState.electrons = element.z; 
             atomState.neutrons = element.standardNeutrons;
             
-            console.log(`[Periodesystem] Oppdaterer byggeflate til: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
-            
             updateUI();
             switchTab('build');
         });
 
         periodicGrid.appendChild(box);
     });
-    
-    console.log('[Periodesystem] Rutenett generert med gruppenummer og atomvekt.');
 }
 
-// === SEKSJON: Visuell Tegning ===
+// === SEKSJON: Visuell Tegning (Atombygger) ===
 function drawAtom() {
-    console.log('[Tegning] Starter visuell opptegning av atomet...');
-    
-    // 1. Tøm det gamle atomet
     nucleusContainer.innerHTML = '';
     shellsContainer.innerHTML = '';
 
-    // 2. Tegn atomkjernen
     const totalNucleons = atomState.protons + atomState.neutrons;
     
     const MAX_VISIBLE_NUCLEONS = 20;
@@ -206,11 +207,9 @@ function drawAtom() {
         nucleusContainer.appendChild(label);
     }
 
-    // 3. Tegn elektronskall og elektroner med DYNAMISK SKALERING (Nytt i Versjon 25)
     const maxPerShell = [2, 8, 8, 18, 18, 32, 32]; 
     let remainingElectrons = atomState.electrons;
     
-    // 3.1 Finn ut hvor mange skall som kreves
     let tempElectrons = remainingElectrons;
     let totalShells = 0;
     for (let cap of maxPerShell) {
@@ -220,22 +219,18 @@ function drawAtom() {
         } else break;
     }
 
-    // 3.2 Sett standardmål for radier og avstander
     let baseShellRadius = 40 + scatterRadius; 
     let shellGap = 35; 
 
-    // 3.3 Skaler ned hvis atomet blir for stort for boksen
-    const maxAllowedRadius = 180; // Trygg radius-grense innenfor de 400 pikslene i byggeflaten
+    const maxAllowedRadius = 180; 
     const estimatedMaxRadius = baseShellRadius + (totalShells > 0 ? (totalShells - 1) * shellGap : 0);
 
     if (estimatedMaxRadius > maxAllowedRadius) {
         const scaleFactor = maxAllowedRadius / estimatedMaxRadius;
         baseShellRadius *= scaleFactor;
         shellGap *= scaleFactor;
-        console.log(`[Tegning] Stort atom! Skalerte skallene med faktor ${scaleFactor.toFixed(2)} for å få plass.`);
     }
 
-    // 3.4 Tegn opp de ferdig kalkulerte skallene
     let currentShellIndex = 0;
     while(remainingElectrons > 0) {
         const capacity = maxPerShell[currentShellIndex] || 32;
@@ -272,12 +267,10 @@ function drawAtom() {
         
         if (currentShellIndex > 7) break;
     }
-    console.log('[Tegning] Visuell opptegning fullført.');
 }
 
 // === SEKSJON: Analyse og UI Oppdatering ===
 function updateUI() {
-    console.log('[UI] Oppdaterer grensesnittet...');
     analyzeAtom();
     drawAtom();
 }
@@ -286,8 +279,6 @@ function analyzeAtom() {
     const z = atomState.protons;
     const n = atomState.neutrons;
     const e = atomState.electrons;
-    
-    console.log(`[Analyse] Kjører analyse for: Z=${z}, N=${n}, E=${e}`);
     
     const element = typeof elementsData !== 'undefined' ? elementsData.find(el => el.z === z) : null;
     
@@ -300,9 +291,7 @@ function analyzeAtom() {
         infoElement.textContent = element.name;
         infoSymbol.textContent = element.symbol;
         infoAtomicWeight.textContent = element.atomicWeight;
-        
         infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z} og befinner seg i gruppe ${element.group}? Sjekk "Teori"-fanen for å lære hva dette betyr!`;
-        
     } else {
         infoElement.textContent = "Ukjent (utenfor databasen)";
         infoSymbol.textContent = "?";
@@ -327,24 +316,14 @@ function analyzeAtom() {
     } else if (z > 0) {
         const isIon = charge !== 0;
         let isIsotope = false;
-        
-        if (element) {
-            isIsotope = n !== element.standardNeutrons;
-        }
+        if (element) isIsotope = n !== element.standardNeutrons;
 
-        if (isIon && isIsotope) {
-            stateStr = "Ion og Isotop";
-        } else if (isIon) {
-            stateStr = "Ion";
-        } else if (isIsotope) {
-            stateStr = "Isotop";
-        } else {
-            stateStr = "Nøytralt atom";
-        }
+        if (isIon && isIsotope) stateStr = "Ion og Isotop";
+        else if (isIon) stateStr = "Ion";
+        else if (isIsotope) stateStr = "Isotop";
+        else stateStr = "Nøytralt atom";
     }
-    
     infoState.textContent = stateStr;
-    console.log(`[Analyse] Ferdig. Grunnstoff: ${element ? element.name : 'N/A'}, Masse: ${mass}, Ladning: ${chargeStr}, Tilstand: ${stateStr}`);
 }
 
 // === SEKSJON: Partikkel-logikk ===
@@ -377,8 +356,184 @@ btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron'
 
 btnReset.addEventListener('click', resetAtom);
 
+// === SEKSJON: Kjemilab (Molekyler & Salter) ===
+let labMode = 'covalent'; // 'covalent' (Molekyl) eller 'ionic' (Salt)
+let labSelectedElements = []; // Holder oversikt over valgte atomer, f.eks ['H', 'H', 'O']
+
+const btnBondCovalent = document.getElementById('btn-bond-covalent');
+const btnBondIonic = document.getElementById('btn-bond-ionic');
+const labElementTray = document.getElementById('lab-element-tray');
+const labSelectedText = document.getElementById('lab-selected-text');
+const btnLabSynthesize = document.getElementById('btn-lab-synthesize');
+const btnLabClear = document.getElementById('btn-lab-clear');
+const labVisualCanvas = document.getElementById('lab-visual-canvas');
+const labResultFormula = document.getElementById('lab-result-formula');
+const labResultName = document.getElementById('lab-result-name');
+const labResultType = document.getElementById('lab-result-type');
+const labResultStatus = document.getElementById('lab-result-status');
+
+// Oppskriftsbok over kjente stoffer (Fasit)
+const labRecipes = [
+    { formula: 'H₂O', name: 'Vann', type: 'covalent', atoms: ['H', 'H', 'O'] },
+    { formula: 'CO₂', name: 'Karbondioksid', type: 'covalent', atoms: ['C', 'O', 'O'] },
+    { formula: 'O₂', name: 'Oksygengass', type: 'covalent', atoms: ['O', 'O'] },
+    { formula: 'N₂', name: 'Nitrogengass', type: 'covalent', atoms: ['N', 'N'] },
+    { formula: 'CH₄', name: 'Metan', type: 'covalent', atoms: ['C', 'H', 'H', 'H', 'H'] },
+    { formula: 'NaCl', name: 'Natriumklorid (Koksalt)', type: 'ionic', atoms: ['Cl', 'Na'] }, // Alfabetisk rekkefølge for sjekk
+    { formula: 'FeO', name: 'Jern(II)oksid (Rust)', type: 'ionic', atoms: ['Fe', 'O'] },
+    { formula: 'MgCl₂', name: 'Magnesiumklorid', type: 'ionic', atoms: ['Cl', 'Cl', 'Mg'] }
+];
+
+// Fargekoder for pedagogisk visning i laben
+const atomColors = {
+    'H': '#ecf0f1', 'C': '#34495e', 'O': '#e74c3c', 'N': '#3498db',
+    'Na': '#9b59b6', 'Cl': '#2ecc71', 'Mg': '#f1c40f', 'Fe': '#e67e22'
+};
+
+// Forenklede ladninger for visualisering i saltgitteret
+const atomCharges = {
+    'Na': '+', 'Cl': '-', 'Mg': '2+', 'Fe': '2+', 'O': '2-'
+};
+
+// Bygger knapperaden eleven kan plukke fra
+function initLabTray() {
+    const trayElements = ['H', 'C', 'N', 'O', 'Na', 'Mg', 'Cl', 'Fe'];
+    labElementTray.innerHTML = '';
+    trayElements.forEach(sym => {
+        const btn = document.createElement('button');
+        btn.className = 'tray-btn';
+        btn.textContent = sym;
+        btn.style.borderColor = atomColors[sym] || '#bdc3c7';
+        
+        btn.addEventListener('click', () => {
+            labSelectedElements.push(sym);
+            updateLabUI();
+        });
+        labElementTray.appendChild(btn);
+    });
+}
+
+function updateLabUI() {
+    if (labSelectedElements.length === 0) {
+        labSelectedText.textContent = 'Ingenting';
+    } else {
+        labSelectedText.textContent = labSelectedElements.join(' + ');
+    }
+}
+
+// Brytere for bindingstype
+btnBondCovalent.addEventListener('click', () => {
+    labMode = 'covalent';
+    btnBondCovalent.classList.add('active');
+    btnBondIonic.classList.remove('active');
+});
+
+btnBondIonic.addEventListener('click', () => {
+    labMode = 'ionic';
+    btnBondIonic.classList.add('active');
+    btnBondCovalent.classList.remove('active');
+});
+
+// Tøm reaktoren
+btnLabClear.addEventListener('click', () => {
+    labSelectedElements = [];
+    labVisualCanvas.innerHTML = '<div id="lab-placeholder-text">Tilsett atomer og trykk "Koble sammen!"</div>';
+    labResultFormula.textContent = '-';
+    labResultName.textContent = '-';
+    labResultType.textContent = '-';
+    labResultStatus.textContent = 'Venter på syntese...';
+    labResultStatus.style.color = 'inherit';
+    updateLabUI();
+});
+
+// Hovedfunksjon: Forsøk å bygge stoffet!
+btnLabSynthesize.addEventListener('click', () => {
+    if (labSelectedElements.length === 0) return;
+
+    // Sorterer valgte atomer alfabetisk for å enkelt kunne sammenligne med fasiten
+    const sortedSelected = [...labSelectedElements].sort().join('');
+    
+    let foundRecipe = null;
+    for (let r of labRecipes) {
+        if ([...r.atoms].sort().join('') === sortedSelected) {
+            foundRecipe = r;
+            break;
+        }
+    }
+
+    if (!foundRecipe) {
+        labResultStatus.textContent = 'Feil: Ukjent stoff eller ustabil kombinasjon. Prøv en klassisk oppskrift (f.eks. H + H + O).';
+        labResultStatus.style.color = '#e74c3c'; // Rød feilfarge
+        return;
+    }
+
+    // Vi har funnet et stoff, men har eleven valgt riktig bindingstype?
+    if (foundRecipe.type !== labMode) {
+        if (foundRecipe.type === 'ionic') {
+            labResultStatus.textContent = `Feil binding! Metaller og ikke-metaller danner ionebindinger (salter). Bytt til "Ionebinding" og prøv igjen.`;
+        } else {
+            labResultStatus.textContent = `Feil binding! Ikke-metaller deler elektroner for å oppfylle oktettregelen. Bytt til "Elektronparbinding (Molekyl)" og prøv igjen.`;
+        }
+        labResultStatus.style.color = '#e67e22'; // Oransje advarsel
+        return;
+    }
+
+    // Alt er riktig! Syntesen er vellykket.
+    labResultFormula.textContent = foundRecipe.formula;
+    labResultName.textContent = foundRecipe.name;
+    labResultType.textContent = foundRecipe.type === 'covalent' ? 'Elektronparbinding (Molekyl)' : 'Ionebinding (Salt)';
+    labResultStatus.textContent = 'Vellykket syntese!';
+    labResultStatus.style.color = '#27ae60'; // Grønn suksess
+
+    drawLabResult(foundRecipe);
+});
+
+// Visuell opptegning av det ferdige stoffet
+function drawLabResult(recipe) {
+    labVisualCanvas.innerHTML = '';
+    
+    if (recipe.type === 'covalent') {
+        const container = document.createElement('div');
+        container.className = 'molecule-container';
+        
+        recipe.atoms.forEach(sym => {
+            const atomDiv = document.createElement('div');
+            atomDiv.className = 'lab-atom';
+            atomDiv.textContent = sym;
+            atomDiv.style.backgroundColor = atomColors[sym] || '#ccc';
+            if (sym === 'C' || sym === 'N' || sym === 'Fe') atomDiv.style.color = 'white'; // Kontrast
+            
+            container.appendChild(atomDiv);
+        });
+        labVisualCanvas.appendChild(container);
+        
+    } else {
+        const container = document.createElement('div');
+        container.className = 'salt-lattice';
+        
+        recipe.atoms.forEach(sym => {
+            const atomDiv = document.createElement('div');
+            atomDiv.className = 'lab-atom';
+            atomDiv.textContent = sym;
+            atomDiv.style.backgroundColor = atomColors[sym] || '#ccc';
+            if (sym === 'C' || sym === 'N' || sym === 'Fe') atomDiv.style.color = 'white';
+            
+            // Ioner får visuell ladning (pluss eller minus)
+            const chargeDiv = document.createElement('div');
+            chargeDiv.className = 'ion-charge';
+            chargeDiv.textContent = atomCharges[sym] || '';
+            if (chargeDiv.textContent) atomDiv.appendChild(chargeDiv);
+
+            container.appendChild(atomDiv);
+        });
+        labVisualCanvas.appendChild(container);
+    }
+}
+
+// Initialiser oppstart
 console.log('[System] script.js er lastet inn. Initialiserer UI.');
 generatePeriodicTable();
+initLabTray(); // Setter opp knappene for Kjemilaben
 updateUI();
 
-/* Version: #25 */
+/* Version: #28 */
