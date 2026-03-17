@@ -1,4 +1,4 @@
-/* Version: #19 */
+/* Version: #23 */
 :root {
     --primary-color: #2c3e50;
     --bg-color: #f4f7f6;
@@ -90,8 +90,7 @@ main {
     display: none;
 }
 
-/* Gjør om begge hovedseksjonene til kolonne-layout for å støtte innhold under */
-#build-section, #periodic-section {
+#build-section, #periodic-section, #theory-section {
     flex-direction: column;
 }
 
@@ -211,7 +210,6 @@ main {
     border-left: 4px solid var(--tab-active);
 }
 
-/* Ny fullbredde-design for Trivia i Versjon 19 */
 .trivia-section.full-width {
     width: 100%;
     background-color: var(--bg-color);
@@ -268,6 +266,16 @@ main {
     margin-top: 10px;
 }
 
+.group-number {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    padding-bottom: 5px;
+}
+
 .element-box {
     aspect-ratio: 1;
     display: flex;
@@ -282,6 +290,8 @@ main {
     font-size: 0.8rem;
     color: #333;
     box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    position: relative;
+    padding: 2px;
 }
 
 .element-box:hover {
@@ -291,14 +301,20 @@ main {
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-.element-symbol {
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
 .element-number {
     font-size: 0.7rem;
     opacity: 0.8;
+}
+
+.element-symbol {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin: 2px 0;
+}
+
+.element-weight {
+    font-size: 0.6rem;
+    opacity: 0.7;
 }
 
 /* === Fargekoder for Periodesystemet === */
@@ -313,6 +329,49 @@ main {
 .element-box.lantanoid { background-color: #ffbfff; }
 .element-box.aktinoid { background-color: #ff99cc; }
 .element-box.ukjent { background-color: #e8e8e8; }
+
+/* === SEKSJON: Teori & Begreper === */
+.theory-layout h2 {
+    margin-bottom: 20px;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--tab-active);
+    padding-bottom: 5px;
+}
+
+.theory-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.theory-card {
+    background-color: var(--bg-color);
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    border-top: 4px solid var(--tab-active);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.theory-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.theory-card p, .theory-card ul {
+    font-size: 1.05rem;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.theory-card ul {
+    padding-left: 25px;
+}
+
+.theory-card li {
+    margin-bottom: 8px;
+}
 
 /* === SEKSJON: Visuelle Partikler og Atom === */
 .nucleus {
@@ -394,4 +453,4 @@ main {
     white-space: nowrap;
     pointer-events: none;
 }
-/* Version: #19 */
+/* Version: #23 */
