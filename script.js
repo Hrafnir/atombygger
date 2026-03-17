@@ -1,4 +1,4 @@
-/* Version: #41 */
+/* Version: #44 */
 
 // === SEKSJON: Tilstand (State) ===
 const atomState = {
@@ -298,11 +298,13 @@ btnRemoveNeutron.addEventListener('click', () => updateParticleCount('neutron', 
 btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron', -1));
 btnReset.addEventListener('click', resetAtom);
 
-// === SEKSJON: Kjemilab (Interaktiv Sandkasse) ===
+
+// === SEKSJON: Kjemilab (Interaktiv Sandkasse med Zoom og Fullskjerm) ===
 let labMode = 'share'; 
 let labAtoms = []; 
 let atomIdCounter = 0;
 let labHistory = []; 
+let currentZoom = 1.0; // Holder styr på zoom-nivået
 
 const btnModeShare = document.getElementById('btn-mode-share');
 const btnModeSteal = document.getElementById('btn-mode-steal');
@@ -312,17 +314,20 @@ const labAllElementsTray = document.getElementById('lab-all-elements-tray');
 const btnLabClear = document.getElementById('btn-lab-clear');
 const btnLabUndo = document.getElementById('btn-lab-undo');
 const labCanvas = document.getElementById('lab-interactive-canvas');
+const labCanvasInner = document.getElementById('lab-canvas-inner'); // Indre lerret
 const labBondsLayer = document.getElementById('lab-bonds-layer');
 const labSystemStatus = document.getElementById('lab-system-status');
 const labResultFormula = document.getElementById('lab-result-formula');
 const labResultExplanation = document.getElementById('lab-result-explanation');
 const labPlaceholder = document.getElementById('lab-placeholder-text');
 
-// Eksport og Fullskjerm knapper (Versjon 41)
 const btnLabFullscreen = document.getElementById('btn-lab-fullscreen');
 const btnSaveCanvas = document.getElementById('btn-save-canvas');
 const btnSaveFull = document.getElementById('btn-save-full');
 const labExportArea = document.getElementById('lab-export-area');
+
+const btnZoomIn = document.getElementById('btn-zoom-in');
+const btnZoomOut = document.getElementById('btn-zoom-out');
 
 const atomColors = {
     'H': '#ecf0f1', 'C': '#34495e', 'O': '#e74c3c', 'N': '#3498db',
@@ -377,7 +382,22 @@ btnModeSteal.addEventListener('click', () => {
     btnModeShare.classList.remove('active');
 });
 
-// Fullskjerm API Logikk
+// Zoom-logikk
+function applyZoom() {
+    labCanvasInner.style.transform = `scale(${currentZoom})`;
+}
+
+btnZoomIn.addEventListener('click', () => {
+    currentZoom = Math.min(currentZoom + 0.2, 2.5); // Maks 250%
+    applyZoom();
+});
+
+btnZoomOut.addEventListener('click', () => {
+    currentZoom = Math.max(currentZoom - 0.2, 0.4); // Min 40%
+    applyZoom();
+});
+
+// Fullskjerm-logikk
 btnLabFullscreen.addEventListener('click', () => {
     if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         if (labExportArea.requestFullscreen) {
@@ -396,7 +416,6 @@ btnLabFullscreen.addEventListener('click', () => {
     }
 });
 
-// Lytter for å oppdatere tekst hvis bruker trykker ESC for å avslutte fullskjerm
 document.addEventListener('fullscreenchange', updateFullscreenBtn);
 document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
 
@@ -406,7 +425,7 @@ function updateFullscreenBtn() {
     }
 }
 
-// Bildeeksport Logikk (krever html2canvas script i index.html)
+// Bildeeksport
 function downloadCanvasImage(canvas, baseName) {
     const link = document.createElement('a');
     let formula = labResultFormula.textContent;
@@ -417,24 +436,16 @@ function downloadCanvasImage(canvas, baseName) {
 }
 
 btnSaveCanvas.addEventListener('click', () => {
-    if (typeof html2canvas === 'undefined') {
-        alert("Bildeverktøyet er ikke lastet inn riktig. Sjekk internettforbindelsen din.");
-        return;
-    }
-    // Setter backgroundColor manuelt siden boksen vår av og til blir transparent ved export
-    html2canvas(labCanvas, { backgroundColor: '#2c3e50' }).then(canvas => {
-        downloadCanvasImage(canvas, 'Tavle');
-    });
+    if (typeof html2canvas === 'undefined') return;
+    html2canvas(labCanvas, { backgroundColor: '#2c3e50' }).then(canvas => downloadCanvasImage(canvas, 'Tavle'));
 });
 
 btnSaveFull.addEventListener('click', () => {
     if (typeof html2canvas === 'undefined') return;
-    html2canvas(labExportArea, { backgroundColor: '#f4f7f6' }).then(canvas => {
-        downloadCanvasImage(canvas, 'Komplett');
-    });
+    html2canvas(labExportArea, { backgroundColor: '#f4f7f6' }).then(canvas => downloadCanvasImage(canvas, 'Komplett'));
 });
 
-// History / Undo funksjon
+// Historikk for å kunne angre
 function saveLabState() {
     const stateStr = JSON.stringify(labAtoms.map(a => ({
         id: a.id, symbol: a.symbol, z: a.z, group: a.group, charge: a.charge, x: a.x, y: a.y,
@@ -454,10 +465,7 @@ btnLabUndo.addEventListener('click', () => {
     const prevState = JSON.parse(prevStateStr);
     
     hardClearLab(false); 
-    
-    prevState.forEach(savedAtom => {
-        rebuildAtomFromState(savedAtom);
-    });
+    prevState.forEach(savedAtom => rebuildAtomFromState(savedAtom));
     
     drawSVGConnections();
     updateLabAnalysis();
@@ -470,10 +478,14 @@ btnLabClear.addEventListener('click', () => {
 
 function hardClearLab(clearHistory = false) {
     labAtoms = [];
-    labCanvas.querySelectorAll('.draggable-atom').forEach(e => e.remove());
+    labCanvasInner.querySelectorAll('.draggable-atom').forEach(e => e.remove());
     labBondsLayer.innerHTML = '';
     labPlaceholder.style.display = 'block';
     if(clearHistory) labHistory = [];
+    
+    // Nullstill zoom ved tømming for oversiktens skyld
+    currentZoom = 1.0;
+    applyZoom();
     updateLabAnalysis();
 }
 
@@ -491,6 +503,10 @@ function createAtomObject(symbol, x, y) {
 
     const valenceCount = getValenceElectrons(elementData.group, elementData.z);
     
+    // Beregner logisk sentrum av skjermen, hensyntatt zoom
+    const logicalWidth = labCanvas.clientWidth / currentZoom;
+    const logicalHeight = labCanvas.clientHeight / currentZoom;
+
     const atomObj = {
         id: 'atom_' + atomIdCounter++,
         symbol: symbol,
@@ -499,8 +515,8 @@ function createAtomObject(symbol, x, y) {
         charge: 0, 
         electrons: [], 
         sharedBonds: [], 
-        x: x !== undefined ? x : Math.random() * (labCanvas.clientWidth - 100) + 20, 
-        y: y !== undefined ? y : Math.random() * (labCanvas.clientHeight - 100) + 20,
+        x: x !== undefined ? x : (logicalWidth / 2) + (Math.random() * 60 - 30) - 30, // Sentrerer med litt variasjon
+        y: y !== undefined ? y : (logicalHeight / 2) + (Math.random() * 60 - 30) - 30,
         elementRef: null
     };
 
@@ -564,7 +580,7 @@ function renderAtomDOM(atomObj) {
     });
 
     makeAtomDraggable(atomObj);
-    labCanvas.appendChild(atomEl);
+    labCanvasInner.appendChild(atomEl); // Viktig: Legges til i det indre, zoombare lerretet!
     labAtoms.push(atomObj);
     updateChargeVisuals(atomObj);
     
@@ -578,6 +594,7 @@ function rebuildAtomFromState(savedState) {
     renderAtomDOM(atomObj);
 }
 
+// === Fysikk med Zoom-matematikk ===
 function makeAtomDraggable(atomObj) {
     const el = atomObj.elementRef;
     let isDragging = false;
@@ -587,20 +604,25 @@ function makeAtomDraggable(atomObj) {
         saveLabState(); 
         isDragging = true;
         el.classList.add('dragging');
-        startX = clientX - atomObj.x;
-        startY = clientY - atomObj.y;
+        
+        // Beregn logisk posisjon av musen, hensyntatt zoom
+        const canvasRect = labCanvas.getBoundingClientRect();
+        const logicalX = (clientX - canvasRect.left) / currentZoom;
+        const logicalY = (clientY - canvasRect.top) / currentZoom;
+
+        startX = logicalX - atomObj.x;
+        startY = logicalY - atomObj.y;
     }
 
     function drag(clientX, clientY) {
         if (!isDragging) return;
-        const rect = labCanvas.getBoundingClientRect();
-        let newX = clientX - startX;
-        let newY = clientY - startY;
         
-        if (newX < 0) newX = 0;
-        if (newY < 0) newY = 0;
-        if (newX > rect.width - 60) newX = rect.width - 60;
-        if (newY > rect.height - 60) newY = rect.height - 60;
+        const canvasRect = labCanvas.getBoundingClientRect();
+        const logicalX = (clientX - canvasRect.left) / currentZoom;
+        const logicalY = (clientY - canvasRect.top) / currentZoom;
+
+        let newX = logicalX - startX;
+        let newY = logicalY - startY;
 
         atomObj.x = newX;
         atomObj.y = newY;
@@ -653,9 +675,15 @@ function makeElectronDraggable(eObj, sourceAtomObj) {
 
     function drag(clientX, clientY) {
         if (!isDragging) return;
-        el.style.position = 'fixed';
-        el.style.left = `${clientX}px`;
-        el.style.top = `${clientY}px`;
+        
+        // Posisjonerer elektronet logisk inne i det zoombare lerretet
+        const canvasRect = labCanvas.getBoundingClientRect();
+        const logicalX = (clientX - canvasRect.left) / currentZoom;
+        const logicalY = (clientY - canvasRect.top) / currentZoom;
+
+        el.style.position = 'absolute';
+        el.style.left = `${logicalX}px`;
+        el.style.top = `${logicalY}px`;
     }
 
     function endDrag(clientX, clientY) {
@@ -711,13 +739,15 @@ function getAtomAtPosition(clientX, clientY) {
     let found = null;
     let minDistance = 10000;
     const canvasRect = labCanvas.getBoundingClientRect();
-    const mouseX = clientX - canvasRect.left;
-    const mouseY = clientY - canvasRect.top;
+    
+    // Regner om skjermklikk til logiske koordinater for å sjekke avstand riktig ved zoom
+    const logicalX = (clientX - canvasRect.left) / currentZoom;
+    const logicalY = (clientY - canvasRect.top) / currentZoom;
 
     labAtoms.forEach(atom => {
         const atomCenterX = atom.x + 30; 
         const atomCenterY = atom.y + 30;
-        const dist = Math.hypot(mouseX - atomCenterX, mouseY - atomCenterY);
+        const dist = Math.hypot(logicalX - atomCenterX, logicalY - atomCenterY);
         
         if (dist < 55 && dist < minDistance) {
             minDistance = dist;
@@ -887,7 +917,6 @@ function updateLabAnalysis() {
         }
     });
 
-    // Kjemisk Hill-system for navngivning (Eks: NaCl)
     const counts = {};
     labAtoms.forEach(a => counts[a.symbol] = (counts[a.symbol] || 0) + 1);
     
@@ -928,7 +957,7 @@ function updateLabAnalysis() {
     }
 }
 
-// === FERDIGBYGDE MAKROER (Storskala gitter) ===
+// === FERDIGBYGDE MAKROER ===
 function macroShare(a, b, double = false) {
     let eA = a.electrons.find(e => !e.isShared);
     if (eA) executeShare(eA, a, b);
@@ -941,28 +970,36 @@ function macroShare(a, b, double = false) {
 function loadPrebuilt(type) {
     saveLabState();
     hardClearLab(false);
+    
+    // Zoomer automatisk litt ut for store strukturer
+    if (type === 'Diamond' || type === 'Graphite') {
+        currentZoom = 0.6;
+    } else {
+        currentZoom = 1.0;
+    }
+    applyZoom();
 
-    const w = labCanvas.clientWidth || 800;
-    const cx = w / 2 - 30; 
+    const logicalWidth = labCanvas.clientWidth / currentZoom;
+    const logicalHeight = labCanvas.clientHeight / currentZoom;
+    const cx = logicalWidth / 2 - 30; 
+    const cy = logicalHeight / 2;
 
     if (type === 'H2O') {
         btnModeShare.click();
-        const O = renderAtomDOM(createAtomObject('O', cx, 150));
-        const H1 = renderAtomDOM(createAtomObject('H', cx - 120, 250));
-        const H2 = renderAtomDOM(createAtomObject('H', cx + 120, 250));
+        const O = renderAtomDOM(createAtomObject('O', cx, cy - 30));
+        const H1 = renderAtomDOM(createAtomObject('H', cx - 120, cy + 70));
+        const H2 = renderAtomDOM(createAtomObject('H', cx + 120, cy + 70));
         macroShare(O, H1);
         macroShare(O, H2);
     } 
     else if (type === 'NaCl') {
         btnModeSteal.click();
-        const Na = renderAtomDOM(createAtomObject('Na', cx - 100, 200));
-        const Cl = renderAtomDOM(createAtomObject('Cl', cx + 100, 200));
+        const Na = renderAtomDOM(createAtomObject('Na', cx - 100, cy));
+        const Cl = renderAtomDOM(createAtomObject('Cl', cx + 100, cy));
         executeSteal(Na.electrons[0], Na, Cl);
     }
     else if (type === 'Diamond') {
         btnModeShare.click();
-        // Utvidet tetraedrisk gitter (11 atomer)
-        const cy = 250;
         const c0 = renderAtomDOM(createAtomObject('C', cx, cy));
         const c1 = renderAtomDOM(createAtomObject('C', cx, cy - 100));
         const c2 = renderAtomDOM(createAtomObject('C', cx - 100, cy + 50));
@@ -985,13 +1022,10 @@ function loadPrebuilt(type) {
     }
     else if (type === 'Graphite') {
         btnModeShare.click();
-        // To sammenkoblede sekskanter (Honningkake) med alternerende dobbeltbindinger
-        const cy = 200;
         const d = 70;
         const dx = d * 0.866;
         const dy = d * 0.5;
 
-        // Ring 1 (Venstre)
         const c0 = renderAtomDOM(createAtomObject('C', cx - dx, cy - d));
         const c1 = renderAtomDOM(createAtomObject('C', cx, cy - dy));
         const c2 = renderAtomDOM(createAtomObject('C', cx, cy + dy));
@@ -999,14 +1033,13 @@ function loadPrebuilt(type) {
         const c4 = renderAtomDOM(createAtomObject('C', cx - 2*dx, cy + dy));
         const c5 = renderAtomDOM(createAtomObject('C', cx - 2*dx, cy - dy));
 
-        // Ring 2 (Høyre - deler c1 og c2)
         const c6 = renderAtomDOM(createAtomObject('C', cx + dx, cy - d));
         const c7 = renderAtomDOM(createAtomObject('C', cx + 2*dx, cy - dy));
         const c8 = renderAtomDOM(createAtomObject('C', cx + 2*dx, cy + dy));
         const c9 = renderAtomDOM(createAtomObject('C', cx + dx, cy + d));
 
-        macroShare(c0, c1, true); // Dobbeltbinding
-        macroShare(c1, c2);       // Enkeltbinding
+        macroShare(c0, c1, true); 
+        macroShare(c1, c2);       
         macroShare(c2, c3, true); 
         macroShare(c3, c4);       
         macroShare(c4, c5, true); 
@@ -1025,4 +1058,4 @@ generatePeriodicTable();
 initLabTrays();
 updateUI();
 
-/* Version: #41 */
+/* Version: #44 */
