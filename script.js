@@ -1,4 +1,4 @@
-/* Version: #24 */
+/* Version: #25 */
 
 // === SEKSJON: Tilstand (State) ===
 // Her lagrer vi de nåværende dataene for byggeflaten vår.
@@ -12,12 +12,12 @@ const atomState = {
 // Faner
 const tabBuild = document.getElementById('tab-build');
 const tabPeriodic = document.getElementById('tab-periodic');
-const tabTheory = document.getElementById('tab-theory'); // Ny i Versjon 24
+const tabTheory = document.getElementById('tab-theory');
 
 // Seksjoner (Visninger)
 const sectionBuild = document.getElementById('build-section');
 const sectionPeriodic = document.getElementById('periodic-section');
-const sectionTheory = document.getElementById('theory-section'); // Ny i Versjon 24
+const sectionTheory = document.getElementById('theory-section');
 
 // Knapper for partikler (Pluss)
 const btnAddProton = document.getElementById('btn-add-proton');
@@ -36,7 +36,7 @@ const infoElement = document.getElementById('info-element');
 const infoSymbol = document.getElementById('info-symbol');
 const infoAtomicNumber = document.getElementById('info-atomic-number');
 const infoMass = document.getElementById('info-mass');
-const infoAtomicWeight = document.getElementById('info-atomic-weight'); // Ny i Versjon 24
+const infoAtomicWeight = document.getElementById('info-atomic-weight');
 const infoCharge = document.getElementById('info-charge');
 const infoState = document.getElementById('info-state');
 const infoTrivia = document.getElementById('info-trivia');
@@ -79,7 +79,7 @@ function switchTab(tabName) {
 
 tabBuild.addEventListener('click', () => switchTab('build'));
 tabPeriodic.addEventListener('click', () => switchTab('periodic'));
-tabTheory.addEventListener('click', () => switchTab('theory')); // Ny i Versjon 24
+tabTheory.addEventListener('click', () => switchTab('theory'));
 
 // === SEKSJON: Periodesystem ===
 function generatePeriodicTable() {
@@ -90,7 +90,7 @@ function generatePeriodicTable() {
         return;
     }
 
-    periodicGrid.innerHTML = ''; // Tømmer rutenettet først
+    periodicGrid.innerHTML = '';
 
     // 1. Generer Gruppenummer (1-18) øverst
     for (let i = 1; i <= 18; i++) {
@@ -107,12 +107,10 @@ function generatePeriodicTable() {
         const box = document.createElement('div');
         box.className = 'element-box';
         
-        // Legg til kategori-klasse for fargekoding
         if (element.category) {
             box.classList.add(element.category);
         }
 
-        // Posisjoner elementet i CSS Grid. Vi legger til +1 på Y fordi rad 1 nå er gruppenummer.
         if (element.x && element.y) {
             box.style.gridColumn = element.x;
             box.style.gridRow = element.y + 1; 
@@ -126,7 +124,6 @@ function generatePeriodicTable() {
         symbolEl.className = 'element-symbol';
         symbolEl.textContent = element.symbol;
         
-        // Nytt i Versjon 24: Viser atomvekten
         const weightEl = document.createElement('div');
         weightEl.className = 'element-weight';
         weightEl.textContent = element.atomicWeight;
@@ -135,11 +132,9 @@ function generatePeriodicTable() {
         box.appendChild(symbolEl);
         box.appendChild(weightEl);
 
-        // Lyttefunksjon for å laste atomet inn i byggeflaten
         box.addEventListener('click', () => {
             console.log(`[Periodesystem] Valgte grunnstoff: ${element.name} (Z=${element.z})`);
             
-            // Sett state til et nøytralt atom av valgt grunnstoff med standard isotop
             atomState.protons = element.z;
             atomState.electrons = element.z; 
             atomState.neutrons = element.standardNeutrons;
@@ -147,7 +142,7 @@ function generatePeriodicTable() {
             console.log(`[Periodesystem] Oppdaterer byggeflate til: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
             
             updateUI();
-            switchTab('build'); // Bytt automatisk til byggeflaten
+            switchTab('build');
         });
 
         periodicGrid.appendChild(box);
@@ -164,38 +159,32 @@ function drawAtom() {
     nucleusContainer.innerHTML = '';
     shellsContainer.innerHTML = '';
 
-    // 2. Tegn atomkjernen (Protoner og Nøytroner hulter til bulter)
+    // 2. Tegn atomkjernen
     const totalNucleons = atomState.protons + atomState.neutrons;
-    console.log(`[Tegning] Tegner kjerne med totalt ${totalNucleons} partikler.`);
     
     const MAX_VISIBLE_NUCLEONS = 20;
     let visibleProtons = atomState.protons;
     let visibleNeutrons = atomState.neutrons;
 
-    // Hvis vi har for mange partikler, beregn proporsjonal visning for bakgrunnen
     if (totalNucleons > MAX_VISIBLE_NUCLEONS) {
         const ratio = MAX_VISIBLE_NUCLEONS / totalNucleons;
         visibleProtons = Math.round(atomState.protons * ratio);
         visibleNeutrons = MAX_VISIBLE_NUCLEONS - visibleProtons;
     }
 
-    // Skyens radius vokser litt med antall partikler
     const scatterRadius = 5 + ((visibleProtons + visibleNeutrons) * 0.8);
 
-    // Hjelpefunksjon for å spre partikler i en sirkulær sky
     function createScatteredNucleon(type, symbol) {
         const el = document.createElement('div');
         el.className = `particle ${type}`;
         if (symbol) el.textContent = symbol;
         
-        // Tilfeldig vinkel og radius (bruk Math.sqrt for jevn fordeling innenfor arealet)
         const angle = Math.random() * Math.PI * 2;
         const r = Math.sqrt(Math.random()) * scatterRadius; 
         
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
         
-        // CSS håndterer sentrering over (x,y) med translate(-50%, -50%)
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
         
@@ -210,30 +199,48 @@ function drawAtom() {
         nucleusContainer.appendChild(createScatteredNucleon('neutron', ''));
     }
 
-    // Sett på "skiltet" med tall hvis vi overstiger grensen
     if (totalNucleons > MAX_VISIBLE_NUCLEONS) {
         const label = document.createElement('div');
         label.className = 'nucleus-label';
         label.textContent = `${atomState.protons} p⁺ | ${atomState.neutrons} n⁰`;
         nucleusContainer.appendChild(label);
-        console.log('[Tegning] La til tekstskilt for stor kjerne.');
     }
 
-    // 3. Tegn elektronskall og elektroner
+    // 3. Tegn elektronskall og elektroner med DYNAMISK SKALERING (Nytt i Versjon 25)
     const maxPerShell = [2, 8, 8, 18, 18, 32, 32]; 
     let remainingElectrons = atomState.electrons;
-    let currentShellIndex = 0;
     
-    // Vi skyver elektronene litt lenger ut hvis kjernen blir veldig stor
-    const baseShellRadius = 40 + scatterRadius; 
-    const shellGap = 35; 
+    // 3.1 Finn ut hvor mange skall som kreves
+    let tempElectrons = remainingElectrons;
+    let totalShells = 0;
+    for (let cap of maxPerShell) {
+        if (tempElectrons > 0) {
+            totalShells++;
+            tempElectrons -= cap;
+        } else break;
+    }
 
+    // 3.2 Sett standardmål for radier og avstander
+    let baseShellRadius = 40 + scatterRadius; 
+    let shellGap = 35; 
+
+    // 3.3 Skaler ned hvis atomet blir for stort for boksen
+    const maxAllowedRadius = 180; // Trygg radius-grense innenfor de 400 pikslene i byggeflaten
+    const estimatedMaxRadius = baseShellRadius + (totalShells > 0 ? (totalShells - 1) * shellGap : 0);
+
+    if (estimatedMaxRadius > maxAllowedRadius) {
+        const scaleFactor = maxAllowedRadius / estimatedMaxRadius;
+        baseShellRadius *= scaleFactor;
+        shellGap *= scaleFactor;
+        console.log(`[Tegning] Stort atom! Skalerte skallene med faktor ${scaleFactor.toFixed(2)} for å få plass.`);
+    }
+
+    // 3.4 Tegn opp de ferdig kalkulerte skallene
+    let currentShellIndex = 0;
     while(remainingElectrons > 0) {
         const capacity = maxPerShell[currentShellIndex] || 32;
         const electronsInThisShell = Math.min(remainingElectrons, capacity);
         
-        console.log(`[Tegning] Skall ${currentShellIndex + 1}: Kapasitet=${capacity}, Inneholder=${electronsInThisShell} elektron(er).`);
-
         const radius = baseShellRadius + (currentShellIndex * shellGap);
         const diameter = radius * 2;
         
@@ -284,18 +291,16 @@ function analyzeAtom() {
     
     const element = typeof elementsData !== 'undefined' ? elementsData.find(el => el.z === z) : null;
     
-    // Grunnleggende analyse
     if (z === 0) {
         infoElement.textContent = "Ingen";
         infoSymbol.textContent = "-";
-        infoAtomicWeight.textContent = "0"; // Nytt i Versjon 24
+        infoAtomicWeight.textContent = "0";
         infoTrivia.textContent = "Bygg et atom eller velg fra periodesystemet for å lære mer!";
     } else if (element) {
         infoElement.textContent = element.name;
         infoSymbol.textContent = element.symbol;
-        infoAtomicWeight.textContent = element.atomicWeight; // Nytt i Versjon 24
+        infoAtomicWeight.textContent = element.atomicWeight;
         
-        // Håndter trivia (vi bruker nå en standardtekst i påvente av ekstern trivia-fil)
         infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z} og befinner seg i gruppe ${element.group}? Sjekk "Teori"-fanen for å lære hva dette betyr!`;
         
     } else {
@@ -344,51 +349,36 @@ function analyzeAtom() {
 
 // === SEKSJON: Partikkel-logikk ===
 function updateParticleCount(particleType, amount) {
-    console.log(`[Partikkel-logikk] Før endring: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
-    
-    if (particleType === 'proton') {
-        atomState.protons += amount;
-        console.log(`[Partikkel-logikk] Endret protoner med ${amount}.`);
-    } else if (particleType === 'neutron') {
-        atomState.neutrons += amount;
-        console.log(`[Partikkel-logikk] Endret nøytroner med ${amount}.`);
-    } else if (particleType === 'electron') {
-        atomState.electrons += amount;
-        console.log(`[Partikkel-logikk] Endret elektroner med ${amount}.`);
-    }
+    if (particleType === 'proton') atomState.protons += amount;
+    else if (particleType === 'neutron') atomState.neutrons += amount;
+    else if (particleType === 'electron') atomState.electrons += amount;
 
     if (atomState.protons < 0) atomState.protons = 0;
     if (atomState.neutrons < 0) atomState.neutrons = 0;
     if (atomState.electrons < 0) atomState.electrons = 0;
 
-    console.log(`[Partikkel-logikk] Etter endring: p=${atomState.protons}, n=${atomState.neutrons}, e=${atomState.electrons}`);
-    
     updateUI();
 }
 
 function resetAtom() {
-    console.log('[Partikkel-logikk] Tilbakestiller byggeflaten...');
     atomState.protons = 0;
     atomState.neutrons = 0;
     atomState.electrons = 0;
     updateUI();
 }
 
-// Lyttefunksjoner for Pluss-knapper
 btnAddProton.addEventListener('click', () => updateParticleCount('proton', 1));
 btnAddNeutron.addEventListener('click', () => updateParticleCount('neutron', 1));
 btnAddElectron.addEventListener('click', () => updateParticleCount('electron', 1));
 
-// Lyttefunksjoner for Minus-knapper
 btnRemoveProton.addEventListener('click', () => updateParticleCount('proton', -1));
 btnRemoveNeutron.addEventListener('click', () => updateParticleCount('neutron', -1));
 btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron', -1));
 
 btnReset.addEventListener('click', resetAtom);
 
-// Initialiser UI ved oppstart
 console.log('[System] script.js er lastet inn. Initialiserer UI.');
-generatePeriodicTable(); // Last inn periodesystemet med riktig layout og farger
+generatePeriodicTable();
 updateUI();
 
-/* Version: #24 */
+/* Version: #25 */
