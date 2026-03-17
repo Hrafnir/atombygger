@@ -1,4 +1,4 @@
-/* Version: #36 */
+/* Version: #40 */
 :root {
     --primary-color: #2c3e50;
     --bg-color: #f4f7f6;
@@ -194,7 +194,7 @@ main {
     border-radius: 5px;
     font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .reset-btn:hover { background-color: #c0392b; }
@@ -502,7 +502,6 @@ main {
     min-height: 80px;
 }
 
-/* Nye klasser for ferdigbygde stoffer */
 .prebuilt-tray {
     display: flex;
     flex-direction: column;
@@ -672,4 +671,38 @@ main {
 #lab-analysis {
     flex: 1;
 }
-/* Version: #36 */
+
+/* === Fullskjerm-tilpasninger (Ny i Versjon 40) === */
+:-webkit-full-screen {
+    background-color: var(--bg-color);
+    padding: 20px;
+}
+
+:fullscreen {
+    background-color: var(--bg-color);
+    padding: 20px;
+}
+
+#lab-export-area:-webkit-full-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#lab-export-area:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#lab-export-area:-webkit-full-screen #lab-interactive-canvas {
+    flex-grow: 1;
+}
+
+#lab-export-area:fullscreen #lab-interactive-canvas {
+    flex-grow: 1;
+}
+
+/* Version: #40 */
