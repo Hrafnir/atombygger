@@ -1,4 +1,4 @@
-/* Version: #44 */
+/* Version: #45 */
 
 // === SEKSJON: Tilstand (State) ===
 const atomState = {
@@ -299,12 +299,12 @@ btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron'
 btnReset.addEventListener('click', resetAtom);
 
 
-// === SEKSJON: Kjemilab (Interaktiv Sandkasse med Zoom og Fullskjerm) ===
+// === SEKSJON: Kjemilab (Interaktiv Sandkasse med Sentrert Virtuelt Lerret) ===
 let labMode = 'share'; 
 let labAtoms = []; 
 let atomIdCounter = 0;
 let labHistory = []; 
-let currentZoom = 1.0; // Holder styr på zoom-nivået
+let currentZoom = 1.0; 
 
 const btnModeShare = document.getElementById('btn-mode-share');
 const btnModeSteal = document.getElementById('btn-mode-steal');
@@ -314,7 +314,7 @@ const labAllElementsTray = document.getElementById('lab-all-elements-tray');
 const btnLabClear = document.getElementById('btn-lab-clear');
 const btnLabUndo = document.getElementById('btn-lab-undo');
 const labCanvas = document.getElementById('lab-interactive-canvas');
-const labCanvasInner = document.getElementById('lab-canvas-inner'); // Indre lerret
+const labCanvasInner = document.getElementById('lab-canvas-inner'); 
 const labBondsLayer = document.getElementById('lab-bonds-layer');
 const labSystemStatus = document.getElementById('lab-system-status');
 const labResultFormula = document.getElementById('lab-result-formula');
@@ -325,7 +325,6 @@ const btnLabFullscreen = document.getElementById('btn-lab-fullscreen');
 const btnSaveCanvas = document.getElementById('btn-save-canvas');
 const btnSaveFull = document.getElementById('btn-save-full');
 const labExportArea = document.getElementById('lab-export-area');
-
 const btnZoomIn = document.getElementById('btn-zoom-in');
 const btnZoomOut = document.getElementById('btn-zoom-out');
 
@@ -334,7 +333,22 @@ const atomColors = {
     'Na': '#9b59b6', 'Cl': '#2ecc71', 'Mg': '#f1c40f', 'Fe': '#e67e22'
 };
 
+// Initialiserer det "uendelige" lerretet
+function setupVirtualCanvas() {
+    labCanvasInner.style.width = '4000px';
+    labCanvasInner.style.height = '4000px';
+    labCanvasInner.style.position = 'absolute';
+    labCanvasInner.style.top = '50%';
+    labCanvasInner.style.left = '50%';
+    labCanvasInner.style.marginLeft = '-2000px';
+    labCanvasInner.style.marginTop = '-2000px';
+    labCanvasInner.style.transformOrigin = 'center center';
+    labCanvasInner.style.overflow = 'visible';
+}
+
 function initLabTrays() {
+    setupVirtualCanvas(); // Setter opp sentreringen
+    
     const usuals = ['H', 'C', 'N', 'O', 'Na', 'Mg', 'Cl', 'Fe'];
     labUsualSuspects.innerHTML = '';
     usuals.forEach(sym => {
@@ -388,12 +402,12 @@ function applyZoom() {
 }
 
 btnZoomIn.addEventListener('click', () => {
-    currentZoom = Math.min(currentZoom + 0.2, 2.5); // Maks 250%
+    currentZoom = Math.min(currentZoom + 0.2, 3.0); 
     applyZoom();
 });
 
 btnZoomOut.addEventListener('click', () => {
-    currentZoom = Math.max(currentZoom - 0.2, 0.4); // Min 40%
+    currentZoom = Math.max(currentZoom - 0.2, 0.3); 
     applyZoom();
 });
 
@@ -483,10 +497,25 @@ function hardClearLab(clearHistory = false) {
     labPlaceholder.style.display = 'block';
     if(clearHistory) labHistory = [];
     
-    // Nullstill zoom ved tømming for oversiktens skyld
     currentZoom = 1.0;
     applyZoom();
     updateLabAnalysis();
+}
+
+// Konvertering fra mus/touch-skjerm til "virtuelle" koordinater
+function getLogicalCoords(clientX, clientY) {
+    const rect = labCanvas.getBoundingClientRect();
+    const viewCenterX = rect.left + rect.width / 2;
+    const viewCenterY = rect.top + rect.height / 2;
+
+    const offsetX = (clientX - viewCenterX) / currentZoom;
+    const offsetY = (clientY - viewCenterY) / currentZoom;
+
+    // Siden sentrum av det indre lerretet er 2000,2000:
+    return {
+        x: 2000 + offsetX,
+        y: 2000 + offsetY
+    };
 }
 
 function getValenceElectrons(group, z) {
@@ -503,10 +532,6 @@ function createAtomObject(symbol, x, y) {
 
     const valenceCount = getValenceElectrons(elementData.group, elementData.z);
     
-    // Beregner logisk sentrum av skjermen, hensyntatt zoom
-    const logicalWidth = labCanvas.clientWidth / currentZoom;
-    const logicalHeight = labCanvas.clientHeight / currentZoom;
-
     const atomObj = {
         id: 'atom_' + atomIdCounter++,
         symbol: symbol,
@@ -515,8 +540,9 @@ function createAtomObject(symbol, x, y) {
         charge: 0, 
         electrons: [], 
         sharedBonds: [], 
-        x: x !== undefined ? x : (logicalWidth / 2) + (Math.random() * 60 - 30) - 30, // Sentrerer med litt variasjon
-        y: y !== undefined ? y : (logicalHeight / 2) + (Math.random() * 60 - 30) - 30,
+        // 2000,2000 er dead center. Vi spre dem litt tilfeldig rundt sentrum (-100 til +100)
+        x: x !== undefined ? x : (2000 - 30) + (Math.random() * 200 - 100), 
+        y: y !== undefined ? y : (2000 - 30) + (Math.random() * 200 - 100),
         elementRef: null
     };
 
@@ -580,7 +606,7 @@ function renderAtomDOM(atomObj) {
     });
 
     makeAtomDraggable(atomObj);
-    labCanvasInner.appendChild(atomEl); // Viktig: Legges til i det indre, zoombare lerretet!
+    labCanvasInner.appendChild(atomEl); 
     labAtoms.push(atomObj);
     updateChargeVisuals(atomObj);
     
@@ -594,7 +620,6 @@ function rebuildAtomFromState(savedState) {
     renderAtomDOM(atomObj);
 }
 
-// === Fysikk med Zoom-matematikk ===
 function makeAtomDraggable(atomObj) {
     const el = atomObj.elementRef;
     let isDragging = false;
@@ -605,24 +630,23 @@ function makeAtomDraggable(atomObj) {
         isDragging = true;
         el.classList.add('dragging');
         
-        // Beregn logisk posisjon av musen, hensyntatt zoom
-        const canvasRect = labCanvas.getBoundingClientRect();
-        const logicalX = (clientX - canvasRect.left) / currentZoom;
-        const logicalY = (clientY - canvasRect.top) / currentZoom;
-
-        startX = logicalX - atomObj.x;
-        startY = logicalY - atomObj.y;
+        const loc = getLogicalCoords(clientX, clientY);
+        startX = loc.x - atomObj.x;
+        startY = loc.y - atomObj.y;
     }
 
     function drag(clientX, clientY) {
         if (!isDragging) return;
         
-        const canvasRect = labCanvas.getBoundingClientRect();
-        const logicalX = (clientX - canvasRect.left) / currentZoom;
-        const logicalY = (clientY - canvasRect.top) / currentZoom;
+        const loc = getLogicalCoords(clientX, clientY);
+        let newX = loc.x - startX;
+        let newY = loc.y - startY;
 
-        let newX = logicalX - startX;
-        let newY = logicalY - startY;
+        // Veldig bred grense slik at atomene ikke forsvinner utenfor den virtuelle boksen
+        if (newX < 0) newX = 0;
+        if (newX > 3940) newX = 3940;
+        if (newY < 0) newY = 0;
+        if (newY > 3940) newY = 3940;
 
         atomObj.x = newX;
         atomObj.y = newY;
@@ -676,14 +700,9 @@ function makeElectronDraggable(eObj, sourceAtomObj) {
     function drag(clientX, clientY) {
         if (!isDragging) return;
         
-        // Posisjonerer elektronet logisk inne i det zoombare lerretet
-        const canvasRect = labCanvas.getBoundingClientRect();
-        const logicalX = (clientX - canvasRect.left) / currentZoom;
-        const logicalY = (clientY - canvasRect.top) / currentZoom;
-
-        el.style.position = 'absolute';
-        el.style.left = `${logicalX}px`;
-        el.style.top = `${logicalY}px`;
+        el.style.position = 'fixed';
+        el.style.left = `${clientX}px`;
+        el.style.top = `${clientY}px`;
     }
 
     function endDrag(clientX, clientY) {
@@ -738,16 +757,13 @@ function makeElectronDraggable(eObj, sourceAtomObj) {
 function getAtomAtPosition(clientX, clientY) {
     let found = null;
     let minDistance = 10000;
-    const canvasRect = labCanvas.getBoundingClientRect();
     
-    // Regner om skjermklikk til logiske koordinater for å sjekke avstand riktig ved zoom
-    const logicalX = (clientX - canvasRect.left) / currentZoom;
-    const logicalY = (clientY - canvasRect.top) / currentZoom;
+    const loc = getLogicalCoords(clientX, clientY);
 
     labAtoms.forEach(atom => {
         const atomCenterX = atom.x + 30; 
         const atomCenterY = atom.y + 30;
-        const dist = Math.hypot(logicalX - atomCenterX, logicalY - atomCenterY);
+        const dist = Math.hypot(loc.x - atomCenterX, loc.y - atomCenterY);
         
         if (dist < 55 && dist < minDistance) {
             minDistance = dist;
@@ -971,7 +987,6 @@ function loadPrebuilt(type) {
     saveLabState();
     hardClearLab(false);
     
-    // Zoomer automatisk litt ut for store strukturer
     if (type === 'Diamond' || type === 'Graphite') {
         currentZoom = 0.6;
     } else {
@@ -979,10 +994,9 @@ function loadPrebuilt(type) {
     }
     applyZoom();
 
-    const logicalWidth = labCanvas.clientWidth / currentZoom;
-    const logicalHeight = labCanvas.clientHeight / currentZoom;
-    const cx = logicalWidth / 2 - 30; 
-    const cy = logicalHeight / 2;
+    // Sentrum av vår nye virtuelle verden er nøyaktig 2000, 2000!
+    const cx = 2000 - 30; 
+    const cy = 2000 - 30;
 
     if (type === 'H2O') {
         btnModeShare.click();
@@ -1058,4 +1072,4 @@ generatePeriodicTable();
 initLabTrays();
 updateUI();
 
-/* Version: #44 */
+/* Version: #45 */
