@@ -12,6 +12,7 @@
         <nav>
             <button id="tab-build" class="tab-button active">Byggeflate</button>
             <button id="tab-periodic" class="tab-button">Periodesystem</button>
+            <button id="tab-theory" class="tab-button">Teori</button>
         </nav>
     </header>
 
@@ -51,6 +52,7 @@
                     <p><strong>Symbol:</strong> <span id="info-symbol">-</span></p>
                     <p><strong>Atomnummer (Z):</strong> <span id="info-atomic-number">0</span></p>
                     <p><strong>Nukleontall (A):</strong> <span id="info-mass">0</span></p>
+                    <p><strong>Atomvekt:</strong> <span id="info-atomic-weight">0</span> g/mol</p>
                     <p><strong>Netto ladning:</strong> <span id="info-charge">0</span></p>
                     <p><strong>Tilstand:</strong> <span id="info-state">Tomt</span></p> </div>
             </div>
@@ -64,22 +66,58 @@
 
         <section id="periodic-section" class="view-section hidden">
             <h2>Periodesystemet</h2>
-            <p>Klikk på et grunnstoff for å laste det inn i byggeflaten.</p>
+            <p>Klikk på et grunnstoff for å laste det inn i byggeflaten. Merk: F-blokken (Lantanider og Aktinider) er plassert nederst for oversiktens skyld.</p>
             
             <div class="pedagogy-info">
                 <div class="info-box groups-info">
                     <h3>Grupper (Kolonner ⬇)</h3>
-                    <p>Grunnstoffer i samme gruppe (loddrett) har oftest like mange <strong>elektroner i ytterste skall</strong>. Dette betyr at de ofte reagerer på lignende måter kjemisk!</p>
+                    <p>Grunnstoffer i samme gruppe har oftest like mange <strong>valenselektroner</strong> (elektroner i ytterste skall). Dette gjør at de reagerer på lignende måter kjemisk!</p>
                 </div>
                 <div class="info-box periods-info">
                     <h3>Perioder (Rader ➡)</h3>
-                    <p>Grunnstoffer i samme periode (vannrett) har like mange <strong>elektronskall</strong>. Hver gang vi starter en ny rad, begynner vi å fylle et nytt skall med elektroner.</p>
+                    <p>Grunnstoffer i samme periode har like mange <strong>elektronskall</strong>. Hver gang vi starter en ny rad, begynner vi å fylle et nytt skall rundt atomkjernen.</p>
                 </div>
             </div>
 
             <div id="periodic-table-grid" class="periodic-grid">
                 </div>
         </section>
+
+        <section id="theory-section" class="view-section hidden theory-layout">
+            <h2>Kjemiske Begreper</h2>
+            <div class="theory-content">
+                
+                <div class="theory-card">
+                    <h3>Hva er Periodesystemet?</h3>
+                    <p>Periodesystemet er kjemiens verdenskart. Det er et system som sorterer alle kjente grunnstoffer i universet etter deres <strong>atomnummer</strong> (antall protoner i kjernen). Det ble opprinnelig satt i system av den russiske forskeren Dmitri Mendelejev i 1869.</p>
+                    <ul>
+                        <li><strong>Metaller:</strong> Finnes på venstre side og i midten. De leder strøm og varme godt.</li>
+                        <li><strong>Ikke-metaller:</strong> Finnes på høyre side (som oksygen og klor).</li>
+                        <li><strong>Edelgasser:</strong> Den aller siste kolonnen til høyre. Disse har fulle ytterskall og vil helst ikke reagere med andre stoffer.</li>
+                    </ul>
+                </div>
+
+                <div class="theory-card">
+                    <h3>Hva betyr Atomvekt (g/mol)?</h3>
+                    <p>Et atom er så ufattelig lite at vi ikke kan veie det i vanlige gram på en kjøkkenvekt. Derfor bruker kjemikere to spesielle begreper for å snakke om massen til atomer:</p>
+                    <ul>
+                        <li><strong>Atommasse (u):</strong> Massen til ett enkelt atom. Protoner og nøytroner veier ca. 1 u hver. Elektroner veier nesten ingenting.</li>
+                        <li><strong>Molar masse (g/mol):</strong> Hvis du samler en gigantisk haug med nøyaktig $6.022 \times 10^{23}$ atomer (dette antallet kalles et "mol"), forteller atomvekten deg hvor mange gram denne haugen veier. For eksempel: 1 mol med Karbon-atomer veier omtrent 12 gram. Derfor er atomvekten til karbon 12 g/mol.</li>
+                    </ul>
+                    <p><strong>Hvorfor er det ofte desimaltall?</strong> I naturen finnes grunnstoffer i ulike varianter kalt <em>isotoper</em> (de har ulikt antall nøytroner). Atomvekten i periodesystemet er et gjennomsnitt av alle disse naturlige isotopene. Derfor veier Klor 35,45 g/mol, fordi det er en blanding av Klor-35 og Klor-37 isotoper.</p>
+                </div>
+
+                <div class="theory-card">
+                    <h3>Ioner og Isotoper</h3>
+                    <ul>
+                        <li><strong>Isotop:</strong> Et atom som har fått <em>flere eller færre nøytroner</em> enn det som er standard. Det er fortsatt samme grunnstoff, men massen endres.</li>
+                        <li><strong>Ion:</strong> Et atom som har <em>forskjellig antall protoner og elektroner</em>. Dette gir atomet en elektrisk ladning. Mangler det elektroner blir det positivt (+), har det ekstra elektroner blir det negativt (-).</li>
+                    </ul>
+                </div>
+
+            </div>
+        </section>
+
     </main>
 
     <script src="elements.js"></script>
