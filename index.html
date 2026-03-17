@@ -13,7 +13,7 @@
             <button id="tab-build" class="tab-button active">Byggeflate</button>
             <button id="tab-periodic" class="tab-button">Periodesystem</button>
             <button id="tab-theory" class="tab-button">Teori</button>
-        </nav>
+            <button id="tab-lab" class="tab-button">Kjemilab</button> </nav>
     </header>
 
     <main>
@@ -54,7 +54,8 @@
                     <p><strong>Nukleontall (A):</strong> <span id="info-mass">0</span></p>
                     <p><strong>Atomvekt:</strong> <span id="info-atomic-weight">0</span> g/mol</p>
                     <p><strong>Netto ladning:</strong> <span id="info-charge">0</span></p>
-                    <p><strong>Tilstand:</strong> <span id="info-state">Tomt</span></p> </div>
+                    <p><strong>Tilstand:</strong> <span id="info-state">Tomt</span></p>
+                </div>
             </div>
 
             <div class="trivia-section full-width">
@@ -116,6 +117,45 @@
                 </div>
 
             </div>
+        </section>
+
+        <section id="lab-section" class="view-section hidden lab-layout">
+            
+            <div class="lab-controls-container">
+                <h2>Reaktor-innstillinger</h2>
+                <p>Velg bindingstype og tilsett grunnstoffer fra listen under for å syntetisere nye stoffer.</p>
+                
+                <div class="bond-toggle-group">
+                    <button id="btn-bond-covalent" class="bond-btn active">Elektronparbinding (Molekyl)</button>
+                    <button id="btn-bond-ionic" class="bond-btn">Ionebinding (Salt)</button>
+                </div>
+
+                <div class="lab-element-tray" id="lab-element-tray">
+                    </div>
+
+                <div class="lab-actions">
+                    <p class="selection-text">I reaktoren: <strong id="lab-selected-text">Ingenting</strong></p>
+                    <div class="action-buttons">
+                        <button id="btn-lab-synthesize" class="synthesize-btn">Koble sammen!</button>
+                        <button id="btn-lab-clear" class="clear-btn">Tøm reaktor</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lab-workspace-row">
+                <div class="lab-canvas" id="lab-visual-canvas">
+                    <div id="lab-placeholder-text">Tilsett atomer og trykk "Koble sammen!"</div>
+                </div>
+
+                <div class="info-panel" id="lab-analysis">
+                    <h2>Stoffanalyse</h2>
+                    <p><strong>Formel:</strong> <span id="lab-result-formula">-</span></p>
+                    <p><strong>Navn:</strong> <span id="lab-result-name">-</span></p>
+                    <p><strong>Bindingstype:</strong> <span id="lab-result-type">-</span></p>
+                    <p><strong>Tilstand:</strong> <span id="lab-result-status">Venter på syntese...</span></p>
+                </div>
+            </div>
+
         </section>
 
     </main>
