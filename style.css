@@ -1,4 +1,4 @@
-/* Version: #43 */
+/* Version: #47 */
 :root {
     --primary-color: #2c3e50;
     --bg-color: #f4f7f6;
@@ -537,6 +537,46 @@ main {
 .tray-btn:hover { transform: scale(1.1); }
 .tray-btn:active { transform: scale(0.9); }
 
+/* Søppelbøtte og Frie elektroner (Ny i Versjon 47) */
+.trash-zone {
+    border: 2px dashed #e74c3c;
+    border-radius: 5px;
+    padding: 15px;
+    text-align: center;
+    color: #e74c3c;
+    font-weight: bold;
+    background-color: #fadbd8;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.trash-zone.drag-over {
+    background-color: #e74c3c;
+    color: white;
+    transform: scale(1.05);
+}
+
+.free-electron {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background-color: var(--electron-color);
+    border-radius: 50%;
+    border: 2px solid #333;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    z-index: 160;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    transition: transform 0.1s;
+}
+
+.free-electron:active, .free-electron.dragging {
+    cursor: grabbing;
+    transform: translate(-50%, -50%) scale(1.5);
+    box-shadow: 0 0 12px rgba(241, 196, 15, 0.9);
+    z-index: 1000;
+}
+
 .lab-workspace-row {
     display: flex;
     gap: 20px;
@@ -553,14 +593,13 @@ main {
     overflow: hidden;
 }
 
-/* Nytt innerlag for zooming i Versjon 43 */
 #lab-canvas-inner {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    transform-origin: 0 0; /* Zoomer fra hjørnet for enklere koordinatstyring i JS */
+    transform-origin: 0 0;
     transition: transform 0.1s ease-out;
 }
 
@@ -714,11 +753,11 @@ main {
     flex: 1;
 }
 
-/* === Fullskjerm-tilpasninger (HUD-magi) === */
+/* === Fullskjerm-tilpasninger === */
 #lab-export-area:-webkit-full-screen {
     width: 100vw;
     height: 100vh;
-    background-color: #2c3e50; /* Hele skjermen blir mørk tavle */
+    background-color: #2c3e50; 
     padding: 0;
     display: block;
 }
@@ -726,7 +765,7 @@ main {
 #lab-export-area:fullscreen {
     width: 100vw;
     height: 100vh;
-    background-color: #2c3e50; /* Hele skjermen blir mørk tavle */
+    background-color: #2c3e50; 
     padding: 0;
     display: block;
 }
@@ -745,7 +784,6 @@ main {
     border-radius: 0;
 }
 
-/* HUD-effekt for analysepanelet når du er i fullskjerm */
 #lab-export-area:-webkit-full-screen #lab-analysis {
     position: absolute;
     bottom: 20px;
@@ -769,5 +807,4 @@ main {
     padding: 15px 25px;
     z-index: 1000;
 }
-
-/* Version: #43 */
+/* Version: #47 */
