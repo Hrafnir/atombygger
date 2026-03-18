@@ -1,1075 +1,810 @@
-/* Version: #45 */
-
-// === SEKSJON: Tilstand (State) ===
-const atomState = {
-    protons: 0,
-    neutrons: 0,
-    electrons: 0
-};
-
-// === SEKSJON: DOM-elementer ===
-const tabBuild = document.getElementById('tab-build');
-const tabPeriodic = document.getElementById('tab-periodic');
-const tabTheory = document.getElementById('tab-theory');
-const tabLab = document.getElementById('tab-lab');
-
-const sectionBuild = document.getElementById('build-section');
-const sectionPeriodic = document.getElementById('periodic-section');
-const sectionTheory = document.getElementById('theory-section');
-const sectionLab = document.getElementById('lab-section');
-
-const btnAddProton = document.getElementById('btn-add-proton');
-const btnAddNeutron = document.getElementById('btn-add-neutron');
-const btnAddElectron = document.getElementById('btn-add-electron');
-const btnRemoveProton = document.getElementById('btn-remove-proton');
-const btnRemoveNeutron = document.getElementById('btn-remove-neutron');
-const btnRemoveElectron = document.getElementById('btn-remove-electron');
-const btnReset = document.getElementById('btn-reset');
-
-const infoElement = document.getElementById('info-element');
-const infoSymbol = document.getElementById('info-symbol');
-const infoAtomicNumber = document.getElementById('info-atomic-number');
-const infoMass = document.getElementById('info-mass');
-const infoAtomicWeight = document.getElementById('info-atomic-weight');
-const infoCharge = document.getElementById('info-charge');
-const infoState = document.getElementById('info-state');
-const infoTrivia = document.getElementById('info-trivia');
-
-const nucleusContainer = document.getElementById('nucleus-container');
-const shellsContainer = document.getElementById('shells-container');
-const periodicGrid = document.getElementById('periodic-table-grid');
-
-// === SEKSJON: Fane-navigasjon ===
-function switchTab(tabName) {
-    tabBuild.classList.remove('active');
-    tabPeriodic.classList.remove('active');
-    tabTheory.classList.remove('active');
-    tabLab.classList.remove('active');
+/* Version: #47 */
+:root {
+    --primary-color: #2c3e50;
+    --bg-color: #f4f7f6;
+    --panel-bg: #ffffff;
+    --text-color: #333333;
     
-    sectionBuild.classList.add('hidden');
-    sectionPeriodic.classList.add('hidden');
-    sectionTheory.classList.add('hidden');
-    sectionLab.classList.add('hidden');
-
-    if (tabName === 'build') {
-        tabBuild.classList.add('active');
-        sectionBuild.classList.remove('hidden');
-    } else if (tabName === 'periodic') {
-        tabPeriodic.classList.add('active');
-        sectionPeriodic.classList.remove('hidden');
-    } else if (tabName === 'theory') {
-        tabTheory.classList.add('active');
-        sectionTheory.classList.remove('hidden');
-    } else if (tabName === 'lab') {
-        tabLab.classList.add('active');
-        sectionLab.classList.remove('hidden');
-    }
-}
-
-tabBuild.addEventListener('click', () => switchTab('build'));
-tabPeriodic.addEventListener('click', () => switchTab('periodic'));
-tabTheory.addEventListener('click', () => switchTab('theory'));
-tabLab.addEventListener('click', () => switchTab('lab'));
-
-// === SEKSJON: Periodesystem ===
-function generatePeriodicTable() {
-    if (typeof elementsData === 'undefined') return;
-    periodicGrid.innerHTML = '';
-
-    for (let i = 1; i <= 18; i++) {
-        const groupHeader = document.createElement('div');
-        groupHeader.className = 'group-number';
-        groupHeader.style.gridColumn = i;
-        groupHeader.style.gridRow = 1;
-        groupHeader.textContent = i;
-        periodicGrid.appendChild(groupHeader);
-    }
-
-    elementsData.forEach(element => {
-        const box = document.createElement('div');
-        box.className = 'element-box';
-        
-        if (element.category) box.classList.add(element.category);
-        if (element.x && element.y) {
-            box.style.gridColumn = element.x;
-            box.style.gridRow = element.y + 1; 
-        }
-        
-        const numberEl = document.createElement('div');
-        numberEl.className = 'element-number';
-        numberEl.textContent = element.z;
-
-        const symbolEl = document.createElement('div');
-        symbolEl.className = 'element-symbol';
-        symbolEl.textContent = element.symbol;
-        
-        const weightEl = document.createElement('div');
-        weightEl.className = 'element-weight';
-        weightEl.textContent = element.atomicWeight;
-
-        box.appendChild(numberEl);
-        box.appendChild(symbolEl);
-        box.appendChild(weightEl);
-
-        box.addEventListener('click', () => {
-            atomState.protons = element.z;
-            atomState.electrons = element.z; 
-            atomState.neutrons = element.standardNeutrons;
-            updateUI();
-            switchTab('build');
-        });
-
-        periodicGrid.appendChild(box);
-    });
-}
-
-// === SEKSJON: Visuell Tegning (Atombyggeren) ===
-function drawAtom() {
-    nucleusContainer.innerHTML = '';
-    shellsContainer.innerHTML = '';
-
-    const totalNucleons = atomState.protons + atomState.neutrons;
-    const MAX_VISIBLE_NUCLEONS = 20;
-    let visibleProtons = atomState.protons;
-    let visibleNeutrons = atomState.neutrons;
-
-    if (totalNucleons > MAX_VISIBLE_NUCLEONS) {
-        const ratio = MAX_VISIBLE_NUCLEONS / totalNucleons;
-        visibleProtons = Math.round(atomState.protons * ratio);
-        visibleNeutrons = MAX_VISIBLE_NUCLEONS - visibleProtons;
-    }
-
-    const scatterRadius = 5 + ((visibleProtons + visibleNeutrons) * 0.8);
-
-    function createScatteredNucleon(type, symbol) {
-        const el = document.createElement('div');
-        el.className = `particle ${type}`;
-        if (symbol) el.textContent = symbol;
-        const angle = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random()) * scatterRadius; 
-        el.style.left = `${Math.cos(angle) * r}px`;
-        el.style.top = `${Math.sin(angle) * r}px`;
-        return el;
-    }
+    /* Partikkelfarger */
+    --proton-color: #e74c3c;
+    --neutron-color: #95a5a6;
+    --electron-color: #f1c40f;
+    --electron-text: #333333;
     
-    for(let i = 0; i < visibleProtons; i++) nucleusContainer.appendChild(createScatteredNucleon('proton', '+'));
-    for(let i = 0; i < visibleNeutrons; i++) nucleusContainer.appendChild(createScatteredNucleon('neutron', ''));
-
-    if (totalNucleons > MAX_VISIBLE_NUCLEONS) {
-        const label = document.createElement('div');
-        label.className = 'nucleus-label';
-        label.textContent = `${atomState.protons} p⁺ | ${atomState.neutrons} n⁰`;
-        nucleusContainer.appendChild(label);
-    }
-
-    const maxPerShell = [2, 8, 8, 18, 18, 32, 32]; 
-    let remainingElectrons = atomState.electrons;
-    let tempElectrons = remainingElectrons;
-    let totalShells = 0;
-    
-    for (let cap of maxPerShell) {
-        if (tempElectrons > 0) {
-            totalShells++;
-            tempElectrons -= cap;
-        } else break;
-    }
-
-    let baseShellRadius = Math.max(35, scatterRadius + 15); 
-    let shellGap = 35; 
-    const maxAllowedRadius = 160; 
-    let estimatedMaxRadius = baseShellRadius + (totalShells > 1 ? (totalShells - 1) * shellGap : 0);
-
-    if (estimatedMaxRadius > maxAllowedRadius && totalShells > 1) {
-        shellGap = (maxAllowedRadius - baseShellRadius) / (totalShells - 1);
-    }
-
-    let currentShellIndex = 0;
-    while(remainingElectrons > 0) {
-        const capacity = maxPerShell[currentShellIndex] || 32;
-        const electronsInThisShell = Math.min(remainingElectrons, capacity);
-        const radius = baseShellRadius + (currentShellIndex * shellGap);
-        const diameter = radius * 2;
-        
-        const shellEl = document.createElement('div');
-        shellEl.className = 'shell';
-        shellEl.style.width = `${diameter}px`;
-        shellEl.style.height = `${diameter}px`;
-        shellsContainer.appendChild(shellEl);
-
-        for(let i = 0; i < electronsInThisShell; i++) {
-            const e = document.createElement('div');
-            e.className = 'particle electron';
-            e.textContent = '-';
-            const angle = (i / electronsInThisShell) * 2 * Math.PI;
-            e.style.left = `${radius + radius * Math.cos(angle)}px`;
-            e.style.top = `${radius + radius * Math.sin(angle)}px`;
-            e.style.transform = 'translate(-50%, -50%)';
-            shellEl.appendChild(e);
-        }
-        remainingElectrons -= electronsInThisShell;
-        currentShellIndex++;
-        if (currentShellIndex > 7) break;
-    }
+    /* Faner og UI */
+    --tab-inactive: #bdc3c7;
+    --tab-active: #3498db;
+    --tab-hover: #2980b9;
 }
 
-// === SEKSJON: Analyse og UI Oppdatering ===
-function updateUI() {
-    analyzeAtom();
-    drawAtom();
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-function analyzeAtom() {
-    const z = atomState.protons;
-    const n = atomState.neutrons;
-    const e = atomState.electrons;
-    const element = typeof elementsData !== 'undefined' ? elementsData.find(el => el.z === z) : null;
-    
-    if (z === 0) {
-        infoElement.textContent = "Ingen";
-        infoSymbol.textContent = "-";
-        infoAtomicWeight.textContent = "0";
-        infoTrivia.textContent = "Bygg et atom eller velg fra periodesystemet for å lære mer!";
-    } else if (element) {
-        infoElement.textContent = element.name;
-        infoSymbol.textContent = element.symbol;
-        infoAtomicWeight.textContent = element.atomicWeight;
-        
-        if (element.trivia) {
-            infoTrivia.textContent = element.trivia;
-        } else {
-            infoTrivia.textContent = `Visste du at ${element.name} har atomnummer ${element.z} og befinner seg i gruppe ${element.group}? Sjekk "Teori"-fanen for å lære hva dette betyr!`;
-        }
-    } else {
-        infoElement.textContent = "Ukjent (utenfor databasen)";
-        infoSymbol.textContent = "?";
-        infoAtomicWeight.textContent = "?";
-        infoTrivia.textContent = "Denne partikkelkombinasjonen eksisterer ikke som et kjent grunnstoff i naturen.";
-    }
-
-    const mass = z + n;
-    infoAtomicNumber.textContent = z;
-    infoMass.textContent = mass;
-
-    const charge = z - e;
-    let chargeStr = "0";
-    if (charge > 0) chargeStr = "+" + charge;
-    else if (charge < 0) chargeStr = charge.toString();
-    
-    infoCharge.textContent = chargeStr;
-
-    let stateStr = "Tomt";
-    if (z === 0 && (n > 0 || e > 0)) stateStr = "Løse partikler";
-    else if (z > 0) {
-        const isIon = charge !== 0;
-        let isIsotope = false;
-        if (element) isIsotope = n !== element.standardNeutrons;
-
-        if (isIon && isIsotope) stateStr = "Ion og Isotop";
-        else if (isIon) stateStr = "Ion";
-        else if (isIsotope) stateStr = "Isotop";
-        else stateStr = "Nøytralt atom";
-    }
-    infoState.textContent = stateStr;
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
 }
 
-function updateParticleCount(particleType, amount) {
-    if (particleType === 'proton') atomState.protons += amount;
-    else if (particleType === 'neutron') atomState.neutrons += amount;
-    else if (particleType === 'electron') atomState.electrons += amount;
-
-    if (atomState.protons < 0) atomState.protons = 0;
-    if (atomState.neutrons < 0) atomState.neutrons = 0;
-    if (atomState.electrons < 0) atomState.electrons = 0;
-    updateUI();
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-function resetAtom() {
-    atomState.protons = 0;
-    atomState.neutrons = 0;
-    atomState.electrons = 0;
-    updateUI();
+header h1 {
+    font-size: 1.8rem;
+    letter-spacing: 1px;
 }
 
-btnAddProton.addEventListener('click', () => updateParticleCount('proton', 1));
-btnAddNeutron.addEventListener('click', () => updateParticleCount('neutron', 1));
-btnAddElectron.addEventListener('click', () => updateParticleCount('electron', 1));
-btnRemoveProton.addEventListener('click', () => updateParticleCount('proton', -1));
-btnRemoveNeutron.addEventListener('click', () => updateParticleCount('neutron', -1));
-btnRemoveElectron.addEventListener('click', () => updateParticleCount('electron', -1));
-btnReset.addEventListener('click', resetAtom);
-
-
-// === SEKSJON: Kjemilab (Interaktiv Sandkasse med Sentrert Virtuelt Lerret) ===
-let labMode = 'share'; 
-let labAtoms = []; 
-let atomIdCounter = 0;
-let labHistory = []; 
-let currentZoom = 1.0; 
-
-const btnModeShare = document.getElementById('btn-mode-share');
-const btnModeSteal = document.getElementById('btn-mode-steal');
-const labUsualSuspects = document.getElementById('lab-usual-suspects');
-const btnShowAllElements = document.getElementById('btn-show-all-elements');
-const labAllElementsTray = document.getElementById('lab-all-elements-tray');
-const btnLabClear = document.getElementById('btn-lab-clear');
-const btnLabUndo = document.getElementById('btn-lab-undo');
-const labCanvas = document.getElementById('lab-interactive-canvas');
-const labCanvasInner = document.getElementById('lab-canvas-inner'); 
-const labBondsLayer = document.getElementById('lab-bonds-layer');
-const labSystemStatus = document.getElementById('lab-system-status');
-const labResultFormula = document.getElementById('lab-result-formula');
-const labResultExplanation = document.getElementById('lab-result-explanation');
-const labPlaceholder = document.getElementById('lab-placeholder-text');
-
-const btnLabFullscreen = document.getElementById('btn-lab-fullscreen');
-const btnSaveCanvas = document.getElementById('btn-save-canvas');
-const btnSaveFull = document.getElementById('btn-save-full');
-const labExportArea = document.getElementById('lab-export-area');
-const btnZoomIn = document.getElementById('btn-zoom-in');
-const btnZoomOut = document.getElementById('btn-zoom-out');
-
-const atomColors = {
-    'H': '#ecf0f1', 'C': '#34495e', 'O': '#e74c3c', 'N': '#3498db',
-    'Na': '#9b59b6', 'Cl': '#2ecc71', 'Mg': '#f1c40f', 'Fe': '#e67e22'
-};
-
-// Initialiserer det "uendelige" lerretet
-function setupVirtualCanvas() {
-    labCanvasInner.style.width = '4000px';
-    labCanvasInner.style.height = '4000px';
-    labCanvasInner.style.position = 'absolute';
-    labCanvasInner.style.top = '50%';
-    labCanvasInner.style.left = '50%';
-    labCanvasInner.style.marginLeft = '-2000px';
-    labCanvasInner.style.marginTop = '-2000px';
-    labCanvasInner.style.transformOrigin = 'center center';
-    labCanvasInner.style.overflow = 'visible';
+nav {
+    display: flex;
+    gap: 10px;
 }
 
-function initLabTrays() {
-    setupVirtualCanvas(); // Setter opp sentreringen
-    
-    const usuals = ['H', 'C', 'N', 'O', 'Na', 'Mg', 'Cl', 'Fe'];
-    labUsualSuspects.innerHTML = '';
-    usuals.forEach(sym => {
-        const btn = document.createElement('button');
-        btn.className = 'tray-btn';
-        btn.textContent = sym;
-        btn.style.borderColor = atomColors[sym] || '#bdc3c7';
-        btn.addEventListener('click', () => addAtomToCanvas(sym));
-        labUsualSuspects.appendChild(btn);
-    });
-
-    labAllElementsTray.innerHTML = '';
-    elementsData.forEach(el => {
-        const btn = document.createElement('button');
-        btn.className = 'tray-btn';
-        btn.textContent = el.symbol;
-        btn.style.fontSize = '0.9rem';
-        if (el.category) btn.classList.add(el.category);
-        btn.addEventListener('click', () => addAtomToCanvas(el.symbol));
-        labAllElementsTray.appendChild(btn);
-    });
-
-    document.querySelectorAll('.prebuilt-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const type = e.target.getAttribute('data-type');
-            loadPrebuilt(type);
-        });
-    });
+.tab-button {
+    background-color: var(--tab-inactive);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-btnShowAllElements.addEventListener('click', () => {
-    labAllElementsTray.classList.toggle('hidden');
-    btnShowAllElements.textContent = labAllElementsTray.classList.contains('hidden') ? 'Vis hele periodesystemet' : 'Skjul periodesystemet';
-});
-
-btnModeShare.addEventListener('click', () => {
-    labMode = 'share';
-    btnModeShare.classList.add('active');
-    btnModeSteal.classList.remove('active');
-});
-
-btnModeSteal.addEventListener('click', () => {
-    labMode = 'steal';
-    btnModeSteal.classList.add('active');
-    btnModeShare.classList.remove('active');
-});
-
-// Zoom-logikk
-function applyZoom() {
-    labCanvasInner.style.transform = `scale(${currentZoom})`;
+.tab-button:hover {
+    background-color: var(--tab-hover);
 }
 
-btnZoomIn.addEventListener('click', () => {
-    currentZoom = Math.min(currentZoom + 0.2, 3.0); 
-    applyZoom();
-});
-
-btnZoomOut.addEventListener('click', () => {
-    currentZoom = Math.max(currentZoom - 0.2, 0.3); 
-    applyZoom();
-});
-
-// Fullskjerm-logikk
-btnLabFullscreen.addEventListener('click', () => {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if (labExportArea.requestFullscreen) {
-            labExportArea.requestFullscreen();
-        } else if (labExportArea.webkitRequestFullscreen) {
-            labExportArea.webkitRequestFullscreen();
-        }
-        btnLabFullscreen.textContent = '🗙 Avslutt fullskjerm';
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
-        btnLabFullscreen.textContent = '⛶ Fullskjerm tavle';
-    }
-});
-
-document.addEventListener('fullscreenchange', updateFullscreenBtn);
-document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
-
-function updateFullscreenBtn() {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        btnLabFullscreen.textContent = '⛶ Fullskjerm tavle';
-    }
+.tab-button.active {
+    background-color: var(--tab-active);
 }
 
-// Bildeeksport
-function downloadCanvasImage(canvas, baseName) {
-    const link = document.createElement('a');
-    let formula = labResultFormula.textContent;
-    if (formula === '-' || formula === '') formula = 'Blanding';
-    link.download = `Kjemilab_${formula}_${baseName}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+main {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-btnSaveCanvas.addEventListener('click', () => {
-    if (typeof html2canvas === 'undefined') return;
-    html2canvas(labCanvas, { backgroundColor: '#2c3e50' }).then(canvas => downloadCanvasImage(canvas, 'Tavle'));
-});
-
-btnSaveFull.addEventListener('click', () => {
-    if (typeof html2canvas === 'undefined') return;
-    html2canvas(labExportArea, { backgroundColor: '#f4f7f6' }).then(canvas => downloadCanvasImage(canvas, 'Komplett'));
-});
-
-// Historikk for å kunne angre
-function saveLabState() {
-    const stateStr = JSON.stringify(labAtoms.map(a => ({
-        id: a.id, symbol: a.symbol, z: a.z, group: a.group, charge: a.charge, x: a.x, y: a.y,
-        electrons: a.electrons.map(e => ({
-            id: e.id, ownerId: e.ownerId, isShared: e.isShared, sharedWithId: e.sharedWithId, angle: e.angle
-        })),
-        sharedBonds: a.sharedBonds.map(e => ({
-            id: e.id, sharedWithId: e.sharedWithId
-        }))
-    })));
-    labHistory.push(stateStr);
+/* === Seksjonsvisning === */
+.view-section {
+    display: flex;
+    gap: 20px;
+    background: var(--panel-bg);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
-btnLabUndo.addEventListener('click', () => {
-    if (labHistory.length === 0) return;
-    const prevStateStr = labHistory.pop();
-    const prevState = JSON.parse(prevStateStr);
-    
-    hardClearLab(false); 
-    prevState.forEach(savedAtom => rebuildAtomFromState(savedAtom));
-    
-    drawSVGConnections();
-    updateLabAnalysis();
-});
-
-btnLabClear.addEventListener('click', () => {
-    saveLabState(); 
-    hardClearLab(true);
-});
-
-function hardClearLab(clearHistory = false) {
-    labAtoms = [];
-    labCanvasInner.querySelectorAll('.draggable-atom').forEach(e => e.remove());
-    labBondsLayer.innerHTML = '';
-    labPlaceholder.style.display = 'block';
-    if(clearHistory) labHistory = [];
-    
-    currentZoom = 1.0;
-    applyZoom();
-    updateLabAnalysis();
+.view-section.hidden {
+    display: none;
 }
 
-// Konvertering fra mus/touch-skjerm til "virtuelle" koordinater
-function getLogicalCoords(clientX, clientY) {
-    const rect = labCanvas.getBoundingClientRect();
-    const viewCenterX = rect.left + rect.width / 2;
-    const viewCenterY = rect.top + rect.height / 2;
-
-    const offsetX = (clientX - viewCenterX) / currentZoom;
-    const offsetY = (clientY - viewCenterY) / currentZoom;
-
-    // Siden sentrum av det indre lerretet er 2000,2000:
-    return {
-        x: 2000 + offsetX,
-        y: 2000 + offsetY
-    };
+#build-section, #periodic-section, #theory-section, #lab-section {
+    flex-direction: column;
 }
 
-function getValenceElectrons(group, z) {
-    if (z === 2) return 2; 
-    if (group === '-' || group === undefined) return 2; 
-    if (group >= 13 && group <= 18) return group - 10;
-    if (group >= 1 && group <= 2) return group;
-    return 2; 
+/* === Byggeflate Layout === */
+.build-top-row {
+    display: flex;
+    gap: 20px;
+    width: 100%;
 }
 
-function createAtomObject(symbol, x, y) {
-    const elementData = elementsData.find(e => e.symbol === symbol);
-    if (!elementData) return null;
-
-    const valenceCount = getValenceElectrons(elementData.group, elementData.z);
-    
-    const atomObj = {
-        id: 'atom_' + atomIdCounter++,
-        symbol: symbol,
-        z: elementData.z,
-        group: elementData.group,
-        charge: 0, 
-        electrons: [], 
-        sharedBonds: [], 
-        // 2000,2000 er dead center. Vi spre dem litt tilfeldig rundt sentrum (-100 til +100)
-        x: x !== undefined ? x : (2000 - 30) + (Math.random() * 200 - 100), 
-        y: y !== undefined ? y : (2000 - 30) + (Math.random() * 200 - 100),
-        elementRef: null
-    };
-
-    for (let i = 0; i < valenceCount; i++) {
-        atomObj.electrons.push({
-            id: atomObj.id + '_e' + i,
-            ownerId: atomObj.id,
-            isShared: false,
-            sharedWithId: null,
-            angle: 0,
-            elementRef: null
-        });
-    }
-    return atomObj;
+.controls-panel, .info-panel {
+    flex: 1;
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
 }
 
-function addAtomToCanvas(symbol, x, y) {
-    saveLabState(); 
-    const atomObj = createAtomObject(symbol, x, y);
-    if(atomObj) renderAtomDOM(atomObj);
+.controls-panel h2, .info-panel h2 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--tab-active);
+    padding-bottom: 5px;
 }
 
-function renderAtomDOM(atomObj) {
-    labPlaceholder.style.display = 'none';
-    
-    const atomEl = document.createElement('div');
-    atomEl.className = 'draggable-atom';
-    atomEl.id = atomObj.id;
-    atomEl.style.left = `${atomObj.x}px`;
-    atomEl.style.top = `${atomObj.y}px`;
-    atomEl.style.backgroundColor = atomColors[atomObj.symbol] || '#ecf0f1';
-    atomEl.style.touchAction = 'none'; 
-    if (['C', 'N', 'Fe'].includes(atomObj.symbol)) atomEl.style.color = 'white';
-    
-    const symbolSpan = document.createElement('span');
-    symbolSpan.className = 'symbol';
-    symbolSpan.textContent = atomObj.symbol;
-    atomEl.appendChild(symbolSpan);
-
-    const chargeBadge = document.createElement('div');
-    chargeBadge.className = 'ion-charge-badge';
-    chargeBadge.style.display = 'none';
-    atomEl.appendChild(chargeBadge);
-
-    atomObj.elementRef = atomEl;
-
-    const radius = 45;
-    atomObj.electrons.forEach(eObj => {
-        const eEl = document.createElement('div');
-        eEl.className = 'valence-electron';
-        if (eObj.isShared) eEl.classList.add('shared');
-        eEl.id = eObj.id;
-        eEl.style.touchAction = 'none';
-        eEl.style.left = `calc(50% + ${Math.cos(eObj.angle) * radius}px)`;
-        eEl.style.top = `calc(50% + ${Math.sin(eObj.angle) * radius}px)`;
-        
-        eObj.elementRef = eEl;
-        atomEl.appendChild(eEl);
-        
-        makeElectronDraggable(eObj, atomObj);
-    });
-
-    makeAtomDraggable(atomObj);
-    labCanvasInner.appendChild(atomEl); 
-    labAtoms.push(atomObj);
-    updateChargeVisuals(atomObj);
-    
-    recalculateElectronAngles(atomObj);
-    updateLabAnalysis();
-    return atomObj;
+.build-canvas {
+    flex: 2;
+    background-color: #2c3e50;
+    border-radius: 8px;
+    min-height: 400px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border: 3px solid #bdc3c7;
 }
 
-function rebuildAtomFromState(savedState) {
-    const atomObj = { ...savedState, elementRef: null, sharedBonds: [] };
-    renderAtomDOM(atomObj);
+/* === Knapper og Verktøy === */
+.control-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-function makeAtomDraggable(atomObj) {
-    const el = atomObj.elementRef;
-    let isDragging = false;
-    let startX, startY;
-
-    function startDrag(clientX, clientY) {
-        saveLabState(); 
-        isDragging = true;
-        el.classList.add('dragging');
-        
-        const loc = getLogicalCoords(clientX, clientY);
-        startX = loc.x - atomObj.x;
-        startY = loc.y - atomObj.y;
-    }
-
-    function drag(clientX, clientY) {
-        if (!isDragging) return;
-        
-        const loc = getLogicalCoords(clientX, clientY);
-        let newX = loc.x - startX;
-        let newY = loc.y - startY;
-
-        // Veldig bred grense slik at atomene ikke forsvinner utenfor den virtuelle boksen
-        if (newX < 0) newX = 0;
-        if (newX > 3940) newX = 3940;
-        if (newY < 0) newY = 0;
-        if (newY > 3940) newY = 3940;
-
-        atomObj.x = newX;
-        atomObj.y = newY;
-        el.style.left = `${newX}px`;
-        el.style.top = `${newY}px`;
-        drawSVGConnections(); 
-    }
-
-    function endDrag() {
-        if (isDragging) {
-            isDragging = false;
-            el.classList.remove('dragging');
-        }
-    }
-
-    el.addEventListener('mousedown', (e) => {
-        if (e.target.classList.contains('valence-electron')) return;
-        startDrag(e.clientX, e.clientY);
-    });
-    document.addEventListener('mousemove', (e) => drag(e.clientX, e.clientY));
-    document.addEventListener('mouseup', endDrag);
-
-    el.addEventListener('touchstart', (e) => {
-        if (e.target.classList.contains('valence-electron')) return;
-        startDrag(e.touches[0].clientX, e.touches[0].clientY);
-    }, {passive: false});
-    
-    el.addEventListener('touchmove', (e) => {
-        if (isDragging) e.preventDefault();
-    }, {passive: false});
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        drag(e.touches[0].clientX, e.touches[0].clientY);
-    }, {passive: false});
-    
-    document.addEventListener('touchend', endDrag);
+.particle-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+    flex-grow: 1;
 }
 
-function makeElectronDraggable(eObj, sourceAtomObj) {
-    const el = eObj.elementRef;
-    let isDragging = false;
-
-    function startDrag() {
-        if (eObj.isShared) return; 
-        saveLabState(); 
-        isDragging = true;
-        el.classList.add('dragging');
-    }
-
-    function drag(clientX, clientY) {
-        if (!isDragging) return;
-        
-        el.style.position = 'fixed';
-        el.style.left = `${clientX}px`;
-        el.style.top = `${clientY}px`;
-    }
-
-    function endDrag(clientX, clientY) {
-        if (!isDragging) return;
-        isDragging = false;
-        el.classList.remove('dragging');
-        el.style.position = 'absolute'; 
-
-        const dropTarget = getAtomAtPosition(clientX, clientY);
-
-        if (dropTarget && dropTarget.id !== sourceAtomObj.id) {
-            if (labMode === 'steal') {
-                executeSteal(eObj, sourceAtomObj, dropTarget);
-            } else if (labMode === 'share') {
-                executeShare(eObj, sourceAtomObj, dropTarget);
-            }
-        } else {
-            labHistory.pop(); 
-            recalculateElectronAngles(sourceAtomObj);
-        }
-        updateLabAnalysis();
-    }
-
-    el.addEventListener('mousedown', (e) => {
-        e.stopPropagation(); 
-        startDrag();
-    });
-    document.addEventListener('mousemove', (e) => drag(e.clientX, e.clientY));
-    document.addEventListener('mouseup', (e) => endDrag(e.clientX, e.clientY));
-
-    el.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-        startDrag();
-    }, {passive: false});
-    
-    el.addEventListener('touchmove', (e) => {
-        if(isDragging) e.preventDefault(); 
-    }, {passive: false});
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        drag(e.touches[0].clientX, e.touches[0].clientY);
-    }, {passive: false});
-    
-    document.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        const touch = e.changedTouches[0];
-        endDrag(touch.clientX, touch.clientY);
-    });
+.particle-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 rgba(0,0,0,0.2);
 }
 
-function getAtomAtPosition(clientX, clientY) {
-    let found = null;
-    let minDistance = 10000;
-    
-    const loc = getLogicalCoords(clientX, clientY);
-
-    labAtoms.forEach(atom => {
-        const atomCenterX = atom.x + 30; 
-        const atomCenterY = atom.y + 30;
-        const dist = Math.hypot(loc.x - atomCenterX, loc.y - atomCenterY);
-        
-        if (dist < 55 && dist < minDistance) {
-            minDistance = dist;
-            found = atom;
-        }
-    });
-    return found;
+.particle-btn.proton { background-color: var(--proton-color); }
+.particle-btn.neutron { background-color: var(--neutron-color); }
+.particle-btn.electron { 
+    background-color: var(--electron-color); 
+    color: var(--electron-text);
 }
 
-function executeSteal(eObj, sourceAtom, targetAtom) {
-    sourceAtom.electrons = sourceAtom.electrons.filter(e => e.id !== eObj.id);
-    sourceAtom.charge += 1; 
-    
-    eObj.ownerId = targetAtom.id;
-    targetAtom.electrons.push(eObj);
-    targetAtom.charge -= 1; 
-
-    targetAtom.elementRef.appendChild(eObj.elementRef);
-    
-    recalculateElectronAngles(targetAtom);
-    recalculateElectronAngles(sourceAtom);
-    updateChargeVisuals(sourceAtom);
-    updateChargeVisuals(targetAtom);
+.particle-btn.outline {
+    flex-grow: 0;
+    width: 50px;
+    background-color: transparent;
+    border: 2px solid;
+    font-size: 1.4rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
 }
 
-function executeShare(eObjA, sourceAtom, targetAtom) {
-    const eObjB = targetAtom.electrons.find(e => !e.isShared);
-    if (!eObjB) {
-        alert(`${targetAtom.symbol} har ingen ledige elektroner å dele akkurat nå!`);
-        labHistory.pop();
-        recalculateElectronAngles(sourceAtom);
-        return;
-    }
-    
-    eObjA.isShared = true;
-    eObjA.sharedWithId = targetAtom.id;
-    eObjA.elementRef.classList.add('shared');
+.particle-btn.proton.outline { color: var(--proton-color); border-color: var(--proton-color); }
+.particle-btn.neutron.outline { color: var(--neutron-color); border-color: var(--neutron-color); }
+.particle-btn.electron.outline { color: var(--electron-color); border-color: var(--electron-color); }
 
-    eObjB.isShared = true;
-    eObjB.sharedWithId = sourceAtom.id;
-    eObjB.elementRef.classList.add('shared');
+.particle-btn.proton.outline:hover { background-color: var(--proton-color); color: white; }
+.particle-btn.neutron.outline:hover { background-color: var(--neutron-color); color: white; }
+.particle-btn.electron.outline:hover { background-color: var(--electron-color); color: var(--electron-text); }
 
-    drawSVGConnections();
+.reset-btn, .outline-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
 }
 
-function recalculateElectronAngles(atomObj) {
-    const radius = 45;
-    const count = atomObj.electrons.length;
-    let unsharedIndex = 0;
-    const unsharedCount = atomObj.electrons.filter(e => !e.isShared).length;
+.reset-btn:hover { background-color: #c0392b; }
 
-    atomObj.electrons.forEach((eObj) => {
-        if (!eObj.isShared) {
-            eObj.angle = (unsharedIndex / unsharedCount) * 2 * Math.PI;
-            eObj.elementRef.style.left = `calc(50% + ${Math.cos(eObj.angle) * radius}px)`;
-            eObj.elementRef.style.top = `calc(50% + ${Math.sin(eObj.angle) * radius}px)`;
-            unsharedIndex++;
-        }
-    });
+.outline-btn {
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    margin-top: 10px;
+}
+.outline-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
 }
 
-function updateChargeVisuals(atomObj) {
-    const badge = atomObj.elementRef.querySelector('.ion-charge-badge');
-    if (atomObj.charge === 0) {
-        badge.style.display = 'none';
-    } else {
-        badge.style.display = 'flex';
-        let sign = atomObj.charge > 0 ? '+' : '-';
-        let num = Math.abs(atomObj.charge);
-        badge.textContent = num > 1 ? `${num}${sign}` : sign;
-    }
+/* === Informasjonspanel & Trivia === */
+.info-panel p {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    padding: 8px;
+    background-color: white;
+    border-radius: 4px;
+    border-left: 4px solid var(--tab-active);
 }
 
-function drawSVGConnections() {
-    labBondsLayer.innerHTML = '';
-    labAtoms.forEach(a => a.sharedBonds = []);
-    
-    const bondGroups = {};
-    labAtoms.forEach(atom => {
-        atom.electrons.forEach(eObj => {
-            if (eObj.isShared) {
-                const targetAtom = labAtoms.find(a => a.id === eObj.sharedWithId);
-                if (targetAtom) targetAtom.sharedBonds.push(eObj);
-
-                const bondId = atom.id < eObj.sharedWithId ? `${atom.id}-${eObj.sharedWithId}` : `${eObj.sharedWithId}-${atom.id}`;
-                if(!bondGroups[bondId]) bondGroups[bondId] = [];
-                bondGroups[bondId].push({ atom, eObj });
-            }
-        });
-        recalculateElectronAngles(atom);
-    });
-
-    Object.entries(bondGroups).forEach(([bondId, electrons]) => {
-        if(electrons.length === 0) return;
-        const atomA = electrons[0].atom;
-        const atomB = labAtoms.find(a => a.id === electrons[0].eObj.sharedWithId);
-        if(!atomB) return;
-        
-        const ax = atomA.x + 30;
-        const ay = atomA.y + 30;
-        const bx = atomB.x + 30;
-        const by = atomB.y + 30;
-        
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', ax);
-        line.setAttribute('y1', ay);
-        line.setAttribute('x2', bx);
-        line.setAttribute('y2', by);
-        line.setAttribute('class', 'covalent-bond-line');
-        labBondsLayer.appendChild(line);
-
-        const mx = (ax + bx) / 2;
-        const my = (ay + by) / 2;
-        const dx = bx - ax;
-        const dy = by - ay;
-        const length = Math.sqrt(dx*dx + dy*dy) || 1;
-        const nx = -dy / length;
-        const ny = dx / length;
-        const directionX = dx / length;
-        const directionY = dy / length;
-
-        electrons.forEach((item, index) => {
-            const pairIndex = Math.floor(index / 2); 
-            const isFirstInPair = index % 2 === 0;
-            
-            const perpOffset = isFirstInPair ? 7 : -7;
-            const parallelOffset = (pairIndex - (electrons.length/4 - 0.5)) * 14; 
-
-            const globalX = mx + (nx * perpOffset) + (directionX * parallelOffset);
-            const globalY = my + (ny * perpOffset) + (directionY * parallelOffset);
-
-            item.eObj.elementRef.style.left = `${globalX - item.atom.x}px`;
-            item.eObj.elementRef.style.top = `${globalY - item.atom.y}px`;
-        });
-    });
+.trivia-section.full-width {
+    width: 100%;
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
 }
 
-function getSubscript(n) {
-    const subs = ['₀','₁','₂','₃','₄','₅','₆','₇','₈','₉'];
-    return n.toString().split('').map(d => subs[d]).join('');
+.trivia-section.full-width h2 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--tab-active);
+    padding-bottom: 5px;
 }
 
-function updateLabAnalysis() {
-    if (labAtoms.length === 0) {
-        labSystemStatus.textContent = 'Tomt brett';
-        labSystemStatus.style.color = 'inherit';
-        labResultFormula.textContent = '-';
-        labResultExplanation.textContent = 'Legg ut atomer og begynn å dra elektroner.';
-        return;
-    }
-
-    let allHappy = true;
-
-    labAtoms.forEach(atom => {
-        const nativeOwned = atom.electrons.length; 
-        const sharedAccess = atom.sharedBonds.length; 
-        
-        const effectiveValence = nativeOwned + sharedAccess;
-        const targetOctet = (atom.z <= 2) ? 2 : 8; 
-
-        if (effectiveValence !== targetOctet) {
-            if (atom.charge > 0 && nativeOwned === 0) {
-                // Stabil kation
-            } else {
-                allHappy = false;
-            }
-        }
-    });
-
-    const counts = {};
-    labAtoms.forEach(a => counts[a.symbol] = (counts[a.symbol] || 0) + 1);
-    
-    let formula = '';
-    if (counts['C']) {
-        formula += 'C' + (counts['C'] > 1 ? getSubscript(counts['C']) : '');
-        delete counts['C'];
-        if (counts['H']) {
-            formula += 'H' + (counts['H'] > 1 ? getSubscript(counts['H']) : '');
-            delete counts['H'];
-        }
-    }
-    
-    let remainingSymbols = Object.keys(counts);
-    remainingSymbols.sort((a, b) => {
-        const atomA = labAtoms.find(atom => atom.symbol === a);
-        const atomB = labAtoms.find(atom => atom.symbol === b);
-        if (atomA && atomB && (atomA.charge !== 0 || atomB.charge !== 0)) {
-            return atomB.charge - atomA.charge; 
-        }
-        return a.localeCompare(b);
-    });
-
-    remainingSymbols.forEach(sym => {
-        formula += sym + (counts[sym] > 1 ? getSubscript(counts[sym]) : '');
-    });
-    
-    labResultFormula.textContent = formula;
-
-    if (allHappy) {
-        labSystemStatus.textContent = 'Stabilt! Oktettregelen oppfylt.';
-        labSystemStatus.style.color = '#27ae60';
-        labResultExplanation.textContent = 'Gratulerer! Alle atomene på brettet har nå fylt sitt ytterste skall (eller tømt det helt for å bli et stabilt ion).';
-    } else {
-        labSystemStatus.textContent = 'Ustabilt. Atomer mangler elektroner.';
-        labSystemStatus.style.color = '#e67e22';
-        labResultExplanation.textContent = 'Dra elektroner mellom atomene for å dele (molekyl) eller stjele (ioner) slik at alle får 8 elektroner i ytterste skall (2 for Hydrogen).';
-    }
+.trivia-section.full-width p {
+    background-color: white;
+    border-left: 4px solid var(--tab-active);
+    font-size: 1.1rem;
+    padding: 15px;
+    border-radius: 4px;
+    line-height: 1.6;
 }
 
-// === FERDIGBYGDE MAKROER ===
-function macroShare(a, b, double = false) {
-    let eA = a.electrons.find(e => !e.isShared);
-    if (eA) executeShare(eA, a, b);
-    if (double) {
-        let eA2 = a.electrons.find(e => !e.isShared);
-        if (eA2) executeShare(eA2, a, b);
-    }
+/* === Pedagogiske bokser i Periodesystemet === */
+.pedagogy-info {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
 }
 
-function loadPrebuilt(type) {
-    saveLabState();
-    hardClearLab(false);
-    
-    if (type === 'Diamond' || type === 'Graphite') {
-        currentZoom = 0.6;
-    } else {
-        currentZoom = 1.0;
-    }
-    applyZoom();
-
-    // Sentrum av vår nye virtuelle verden er nøyaktig 2000, 2000!
-    const cx = 2000 - 30; 
-    const cy = 2000 - 30;
-
-    if (type === 'H2O') {
-        btnModeShare.click();
-        const O = renderAtomDOM(createAtomObject('O', cx, cy - 30));
-        const H1 = renderAtomDOM(createAtomObject('H', cx - 120, cy + 70));
-        const H2 = renderAtomDOM(createAtomObject('H', cx + 120, cy + 70));
-        macroShare(O, H1);
-        macroShare(O, H2);
-    } 
-    else if (type === 'NaCl') {
-        btnModeSteal.click();
-        const Na = renderAtomDOM(createAtomObject('Na', cx - 100, cy));
-        const Cl = renderAtomDOM(createAtomObject('Cl', cx + 100, cy));
-        executeSteal(Na.electrons[0], Na, Cl);
-    }
-    else if (type === 'Diamond') {
-        btnModeShare.click();
-        const c0 = renderAtomDOM(createAtomObject('C', cx, cy));
-        const c1 = renderAtomDOM(createAtomObject('C', cx, cy - 100));
-        const c2 = renderAtomDOM(createAtomObject('C', cx - 100, cy + 50));
-        const c3 = renderAtomDOM(createAtomObject('C', cx + 100, cy + 50));
-        const c_front = renderAtomDOM(createAtomObject('C', cx, cy + 120));
-
-        macroShare(c0, c1); macroShare(c0, c2); macroShare(c0, c3); macroShare(c0, c_front);
-
-        const c1_l = renderAtomDOM(createAtomObject('C', cx - 80, cy - 160));
-        const c1_r = renderAtomDOM(createAtomObject('C', cx + 80, cy - 160));
-        macroShare(c1, c1_l); macroShare(c1, c1_r);
-
-        const c2_l = renderAtomDOM(createAtomObject('C', cx - 160, cy + 0));
-        const c2_b = renderAtomDOM(createAtomObject('C', cx - 120, cy + 140));
-        macroShare(c2, c2_l); macroShare(c2, c2_b);
-
-        const c3_r = renderAtomDOM(createAtomObject('C', cx + 160, cy + 0));
-        const c3_b = renderAtomDOM(createAtomObject('C', cx + 120, cy + 140));
-        macroShare(c3, c3_r); macroShare(c3, c3_b);
-    }
-    else if (type === 'Graphite') {
-        btnModeShare.click();
-        const d = 70;
-        const dx = d * 0.866;
-        const dy = d * 0.5;
-
-        const c0 = renderAtomDOM(createAtomObject('C', cx - dx, cy - d));
-        const c1 = renderAtomDOM(createAtomObject('C', cx, cy - dy));
-        const c2 = renderAtomDOM(createAtomObject('C', cx, cy + dy));
-        const c3 = renderAtomDOM(createAtomObject('C', cx - dx, cy + d));
-        const c4 = renderAtomDOM(createAtomObject('C', cx - 2*dx, cy + dy));
-        const c5 = renderAtomDOM(createAtomObject('C', cx - 2*dx, cy - dy));
-
-        const c6 = renderAtomDOM(createAtomObject('C', cx + dx, cy - d));
-        const c7 = renderAtomDOM(createAtomObject('C', cx + 2*dx, cy - dy));
-        const c8 = renderAtomDOM(createAtomObject('C', cx + 2*dx, cy + dy));
-        const c9 = renderAtomDOM(createAtomObject('C', cx + dx, cy + d));
-
-        macroShare(c0, c1, true); 
-        macroShare(c1, c2);       
-        macroShare(c2, c3, true); 
-        macroShare(c3, c4);       
-        macroShare(c4, c5, true); 
-        macroShare(c5, c0);       
-
-        macroShare(c1, c6);       
-        macroShare(c6, c7, true); 
-        macroShare(c7, c8);       
-        macroShare(c8, c9, true); 
-        macroShare(c9, c2);       
-    }
+.info-box {
+    flex: 1;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
 }
 
-console.log('[System] script.js er lastet inn. Initialiserer UI.');
-generatePeriodicTable();
-initLabTrays();
-updateUI();
+.info-box h3 {
+    margin-bottom: 8px;
+    color: var(--primary-color);
+}
 
-/* Version: #45 */
+.groups-info { border-left: 5px solid #e67e22; }
+.periods-info { border-left: 5px solid #8e44ad; }
+
+/* === Periodesystem Rutenett === */
+.periodic-grid {
+    display: grid;
+    grid-template-columns: repeat(18, 1fr);
+    gap: 4px;
+    margin-top: 10px;
+}
+
+.group-number {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    padding-bottom: 5px;
+}
+
+.element-box {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #ecf0f1;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s, filter 0.2s;
+    font-size: 0.8rem;
+    color: #333;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    position: relative;
+    padding: 2px;
+}
+
+.element-box:hover {
+    transform: scale(1.15);
+    filter: brightness(1.1);
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.element-number {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.element-symbol {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin: 2px 0;
+}
+
+.element-weight {
+    font-size: 0.6rem;
+    opacity: 0.7;
+}
+
+.element-box.ikke-metall { background-color: #a0ffa0; }
+.element-box.edelgass { background-color: #c0ffff; }
+.element-box.alkalimetall { background-color: #ff6666; }
+.element-box.jordalkalimetall { background-color: #ffdead; }
+.element-box.halvmetall { background-color: #cccc99; }
+.element-box.halogen { background-color: #ffff99; }
+.element-box.post-innskuddsmetall { background-color: #cccccc; }
+.element-box.innskuddsmetall { background-color: #ffc0c0; }
+.element-box.lantanoid { background-color: #ffbfff; }
+.element-box.aktinoid { background-color: #ff99cc; }
+.element-box.ukjent { background-color: #e8e8e8; }
+
+/* === SEKSJON: Teori & Begreper === */
+.theory-layout h2 {
+    margin-bottom: 20px;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--tab-active);
+    padding-bottom: 5px;
+}
+
+.theory-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.theory-card {
+    background-color: var(--bg-color);
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    border-top: 4px solid var(--tab-active);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.theory-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.theory-card p, .theory-card ul {
+    font-size: 1.05rem;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.theory-card ul { padding-left: 25px; }
+.theory-card li { margin-bottom: 8px; }
+
+/* === SEKSJON: Visuelle Partikler og Atom (Byggeflate) === */
+.nucleus {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;  
+    height: 0;
+    z-index: 10;
+}
+
+.electron-shells {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.shell {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+}
+
+.particle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    font-weight: bold;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+.nucleus .particle {
+    position: absolute; 
+    transform: translate(-50%, -50%);
+}
+
+.particle.proton { background-color: var(--proton-color); color: white; }
+.particle.neutron { background-color: var(--neutron-color); color: white; }
+.particle.electron { 
+    background-color: var(--electron-color); 
+    color: var(--electron-text);
+    position: absolute; 
+    margin: 0; 
+}
+
+.nucleus-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 5px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    z-index: 20;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* === SEKSJON: Kjemilab (Interaktiv Sandkasse) === */
+
+.lab-controls-container {
+    background-color: var(--bg-color);
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.bond-toggle-group {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.bond-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: 2px solid var(--tab-inactive);
+    background-color: white;
+    color: var(--text-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.bond-btn.active {
+    background-color: var(--tab-active);
+    color: white;
+    border-color: var(--tab-active);
+}
+
+.lab-element-tray {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    border: 2px dashed #bdc3c7;
+    min-height: 80px;
+}
+
+.prebuilt-tray {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prebuilt-btn {
+    padding: 12px;
+    background-color: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.prebuilt-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateX(5px);
+}
+
+.tray-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    background-color: #ecf0f1;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+}
+
+.tray-btn:hover { transform: scale(1.1); }
+.tray-btn:active { transform: scale(0.9); }
+
+/* Søppelbøtte og Frie elektroner (Ny i Versjon 47) */
+.trash-zone {
+    border: 2px dashed #e74c3c;
+    border-radius: 5px;
+    padding: 15px;
+    text-align: center;
+    color: #e74c3c;
+    font-weight: bold;
+    background-color: #fadbd8;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.trash-zone.drag-over {
+    background-color: #e74c3c;
+    color: white;
+    transform: scale(1.05);
+}
+
+.free-electron {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background-color: var(--electron-color);
+    border-radius: 50%;
+    border: 2px solid #333;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    z-index: 160;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    transition: transform 0.1s;
+}
+
+.free-electron:active, .free-electron.dragging {
+    cursor: grabbing;
+    transform: translate(-50%, -50%) scale(1.5);
+    box-shadow: 0 0 12px rgba(241, 196, 15, 0.9);
+    z-index: 1000;
+}
+
+.lab-workspace-row {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+
+.lab-canvas.interactive {
+    flex: 2;
+    background-color: #2c3e50;
+    border-radius: 8px;
+    border: 3px solid #bdc3c7;
+    position: relative; 
+    color: white;
+    overflow: hidden;
+}
+
+#lab-canvas-inner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: 0 0;
+    transition: transform 0.1s ease-out;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 300;
+}
+
+.zoom-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 1.8rem;
+    font-weight: bold;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.zoom-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.zoom-btn:active {
+    transform: scale(0.9);
+}
+
+#lab-placeholder-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-style: italic;
+    opacity: 0.7;
+    pointer-events: none;
+    font-size: 1.2rem;
+}
+
+/* Interaktive Atomer på Lerretet */
+.draggable-atom {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.4rem;
+    color: #333;
+    box-shadow: inset -3px -3px 8px rgba(0,0,0,0.2), 2px 2px 5px rgba(0,0,0,0.4);
+    border: 2px solid rgba(255,255,255,0.7);
+    cursor: grab;
+    user-select: none;
+    z-index: 50;
+}
+
+.draggable-atom:active, .draggable-atom.dragging {
+    cursor: grabbing;
+    z-index: 100;
+    box-shadow: inset -3px -3px 8px rgba(0,0,0,0.2), 5px 5px 15px rgba(0,0,0,0.6);
+}
+
+.draggable-atom .symbol { pointer-events: none; }
+
+/* Valenselektroner */
+.valence-electron {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: var(--electron-color);
+    border-radius: 50%;
+    border: 1px solid #333;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    z-index: 150;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.valence-electron:hover {
+    transform: translate(-50%, -50%) scale(1.3);
+    background-color: #fff;
+}
+
+.valence-electron.dragging {
+    cursor: grabbing;
+    z-index: 1000;
+    transform: translate(-50%, -50%) scale(1.5);
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.8);
+}
+
+.valence-electron.shared {
+    background-color: #e74c3c;
+    border-color: white;
+}
+
+/* Ione-ladningsmerker */
+.ion-charge-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    background: white;
+    color: var(--primary-color);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+    pointer-events: none;
+}
+
+.covalent-bond-line {
+    stroke: #bdc3c7;
+    stroke-width: 4;
+    stroke-linecap: round;
+    opacity: 0.8;
+}
+
+/* === Knapper i Lab === */
+.clear-btn {
+    padding: 10px 20px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.clear-btn:hover { background-color: #c0392b; }
+
+#lab-analysis {
+    flex: 1;
+}
+
+/* === Fullskjerm-tilpasninger === */
+#lab-export-area:-webkit-full-screen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #2c3e50; 
+    padding: 0;
+    display: block;
+}
+
+#lab-export-area:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #2c3e50; 
+    padding: 0;
+    display: block;
+}
+
+#lab-export-area:-webkit-full-screen #lab-interactive-canvas {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+}
+
+#lab-export-area:fullscreen #lab-interactive-canvas {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+}
+
+#lab-export-area:-webkit-full-screen #lab-analysis {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 15px 25px;
+    z-index: 1000;
+}
+
+#lab-export-area:fullscreen #lab-analysis {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 15px 25px;
+    z-index: 1000;
+}
+/* Version: #47 */
