@@ -124,17 +124,17 @@
                     <div id="lab-canvas-inner">
                         <div id="lab-placeholder-text">Klikk på atomer i listen under for å legge dem på tavlen.</div>
                         <svg id="lab-bonds-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></svg>
-                        </div>
+                    </div>
                 </div>
 
                 <div class="info-panel" id="lab-analysis" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 15px;">
                     <div>
                         <h2>Reaksjonsanalyse</h2>
-                        <p><strong>Ferdig Formel:</strong> <span id="lab-result-formula" style="font-size: 1.4rem; font-weight: bold; color: var(--primary-color);">-</span></p>
+                        <p><strong>På Tavlen:</strong> <span id="lab-result-formula" style="font-size: 1.4rem; font-weight: bold; color: var(--primary-color);">-</span></p>
                         <p><strong>Systemstatus:</strong> <span id="lab-system-status" style="color: #e67e22;">Ustabilt (Mangler elektroner)</span></p>
                     </div>
                     <div class="explanation-box" style="max-width: 50%;">
-                        <p><strong>Forklaring:</strong> <span id="lab-result-explanation">Atomer søker å ha fulle ytterskall (oktettregelen). Dra elektroner fra ett atom til et annet!</span></p>
+                        <p><strong>Forklaring:</strong> <span id="lab-result-explanation">Atomer søker å ha fulle ytterskall. Dra elektroner for å dele (kovalent) eller stjele (ionisk)!</span></p>
                     </div>
                 </div>
             </div>
@@ -149,26 +149,34 @@
 
                 <div class="bond-toggle-group">
                     <button id="btn-mode-share" class="bond-btn active">Del elektroner (Molekyl)</button>
-                    <button id="btn-mode-steal" class="bond-btn">Stjel elektroner (Salt)</button>
+                    <button id="btn-mode-steal" class="bond-btn">Stjel / Flytt elektroner (Ion/Salt)</button>
                 </div>
 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                    <div style="flex: 2; min-width: 300px;">
+                    <div style="flex: 2; min-width: 250px;">
                         <h3>1. Legg til atomer:</h3>
-                        <div class="lab-element-tray" id="lab-usual-suspects">
-                            </div>
+                        <div class="lab-element-tray" id="lab-usual-suspects"></div>
                         <button id="btn-show-all-elements" class="outline-btn" style="width: 100%; margin-bottom: 10px;">Vis hele periodesystemet</button>
-                        <div id="lab-all-elements-tray" class="periodic-grid hidden" style="margin-bottom: 15px;">
-                            </div>
+                        <div id="lab-all-elements-tray" class="periodic-grid hidden" style="margin-bottom: 15px;"></div>
                     </div>
 
-                    <div style="flex: 1; min-width: 250px;">
+                    <div style="flex: 1.5; min-width: 200px;">
                         <h3>2. Ferdigbygde stoffer:</h3>
                         <div class="prebuilt-tray" id="lab-prebuilts">
                             <button class="prebuilt-btn" data-type="H2O">Vannmolekyl (H₂O)</button>
                             <button class="prebuilt-btn" data-type="NaCl">Koksalt (NaCl)</button>
                             <button class="prebuilt-btn" data-type="Diamond">Diamant (Karbon-gitter)</button>
                             <button class="prebuilt-btn" data-type="Graphite">Grafitt (Karbon-lag)</button>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1.5; min-width: 200px;">
+                        <h3>3. Ioner & Elektroner:</h3>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button id="btn-spawn-electron" class="prebuilt-btn" style="border-color: var(--electron-color); color: #b7950b;">➕ Legg til løst elektron</button>
+                            <div id="electron-trash-zone" class="trash-zone">
+                                🗑️ Dra elektroner hit for å slette dem
+                            </div>
                         </div>
                     </div>
                 </div>
